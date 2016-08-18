@@ -12,43 +12,48 @@ import bluezutils
 
 class Bluetooth(object):
 
+    __mainloop = None
+    
     def __init__(self):
         os.system("rfkill unblock bluetooth")
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-        self.bus = dbus.SystemBus()
+        self.__bus = dbus.SystemBus()
 
-    def scan(self, timeout=5):
+    def scan(self, timeout=10):
         try:
             adapter = bluezutils.find_adapter()
         except Exception as error:
             print error
         else:
-            self.bus.add_signal_receiver(Bluetooth.interfaces_added,
-                    dbus_interface = "org.freedesktop.DBus.ObjectManager",
-                    signal_name = "InterfacesAdded")
-
             adapter.StartDiscovery()
             
-            mainloop = GObject.MainLoop()
-            mainloop.run()
+            Bluetooth.__mainloop = GObject.MainLoop()
+            
+            GObject.timeout_add(timeout * 1000, Bluetooth.timeout)
+
+            Bluetooth.__mainloop.run()
+
+            bluez = dbus.Interface(self.__bus.get_object("org.bluez", "/"),
+                                    "org.freedesktop.DBus.ObjectManager")
+            objects = bluez.GetManagedObjects()
+            devices = []
+            
+            for path, interfaces in objects.iteritems():
+                if "org.bluez.Device1" in interfaces:
+                    dev = interfaces["org.bluez.Device1"]
+
+                    if "Address" not in dev:
+                        continue
+                    if "Name" not in dev:
+                        dev["Name"] = "<unknown>"
+                    
+                    devices.append((str(dev["Name"]), str(dev["Address"])))
+            
+            return devices
 
     @staticmethod
-    def interfaces_added(path, interfaces):#path!
-        properties = interfaces["org.bluez.Device1"]
-        if not properties:
-            return
-
-        if "Address" in properties:
-            address = properties["Address"]
-        else:
-            address = "<unknown>"
-
-        if "Name" in properties:
-            name = properties["Name"]
-        else:
-            name = "<unknown>"
-
-        print(address, name)
+    def timeout():
+        Bluetooth.__mainloop.quit()
 
     def pair(self, address):
         try:
@@ -65,7 +70,9 @@ if __name__ == "__main__":
 
     bluetooth = Bluetooth()
 
-    #bluetooth.scan()
-    bluetooth.pair(sys.argv[1])
+    devices = bluetooth.scan(10)
+
+    for dev in devices:
+        print dev
 
     sys.exit(0)
