@@ -30,14 +30,14 @@ class Bluetooth(object):
                 
                 Bluetooth.__mainloop = GObject.MainLoop()
                 
-                GObject.timeout_add(timeout * 1000, Bluetooth.timeout)
+                GObject.timeout_add(timeout * 1000, Bluetooth.interrupt_mainloop)
 
                 Bluetooth.__mainloop.run()
 
                 man = dbus.Interface(self.__bus.get_object("org.bluez", "/"),
-                                        "org.freedesktop.DBus.ObjectManager")
+                        "org.freedesktop.DBus.ObjectManager")
                 objects = man.GetManagedObjects()
-                devices = []
+                devices = {}
                 
                 for path, interfaces in objects.iteritems():
                     if "org.bluez.Device1" in interfaces:
@@ -48,7 +48,7 @@ class Bluetooth(object):
                         if "Name" not in dev:
                             dev["Name"] = "<unknown>"
                         
-                        devices.append((str(dev["Name"]), str(dev["Address"])))
+                        devices[str(dev["Name"])] = str(dev["Address"])
                 
             except dbus.exceptions.DBusException as error:
                 print error
@@ -56,8 +56,9 @@ class Bluetooth(object):
         return devices
 
     @staticmethod
-    def timeout():
-        Bluetooth.__mainloop.quit()
+    def interrupt_mainloop():
+        if Bluetooth.__mainloop is not None: 
+            Bluetooth.__mainloop.quit()
 
     def pair(self, address):
         try:
@@ -69,7 +70,8 @@ class Bluetooth(object):
             try:
                 device.Pair()
             except dbus.exceptions.DBusException as error:
-                if "AlreadyExists" in error:
+                if "org.bluez.Error.AlreadyExists: Already Exists" ==\
+                        str(error):
                     return True
                 print error
                 return False
@@ -84,10 +86,12 @@ class Bluetooth(object):
             return False
         else:
             try:
-                props = dbus.Interface(self.__bus.get_object("org.bluez", device.object_path),
+                props = dbus.Interface(self.__bus.get_object("org.bluez",
+                        device.object_path),
                         "org.freedesktop.DBus.Properties")
-  
-                props.Set("org.bluez.Device1", "Trusted", dbus.Boolean(1))
+                
+                if props.Get("org.bluez.Device1", "Trusted") != 1:
+                    props.Set("org.bluez.Device1", "Trusted", dbus.Boolean(1))
             except dbus.exceptions.DBusException as error:
                 print error
                 return False
@@ -101,10 +105,13 @@ if __name__ == "__main__":
 
     devices = bluetooth.scan(10)
 
-    for dev in devices:
-        print dev
+    for name, address in devices.items():
+        print name, address
 
-    bluetooth.pair("DC:9B:9C:CB:DB:49")
-    bluetooth.trust("DC:9B:9C:CB:DB:49")
+    name = "HTC_"
+
+    if bluetooth.pair(devices[name]):
+        if bluetooth.trust(devices[name]):
+            print name, "is ready"
 
     sys.exit(0)
