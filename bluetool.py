@@ -20,6 +20,8 @@ class Bluetooth(object):
         self.__bus = dbus.SystemBus()
 
     def scan(self, timeout=10):
+        devices = {}
+
         try:
             adapter = bluezutils.find_adapter()
         except Exception as error:
@@ -37,7 +39,6 @@ class Bluetooth(object):
                 man = dbus.Interface(self.__bus.get_object("org.bluez", "/"),
                         "org.freedesktop.DBus.ObjectManager")
                 objects = man.GetManagedObjects()
-                devices = {}
                 
                 for path, interfaces in objects.iteritems():
                     if "org.bluez.Device1" in interfaces:
@@ -68,11 +69,13 @@ class Bluetooth(object):
             return False
         else:
             try:
-                device.Pair()
+                props = dbus.Interface(self.__bus.get_object("org.bluez",
+                        device.object_path),
+                        "org.freedesktop.DBus.Properties")
+
+                if not props.Get("org.bluez.Device1", "Paired"):
+                    device.Pair()
             except dbus.exceptions.DBusException as error:
-                if "org.bluez.Error.AlreadyExists: Already Exists" ==\
-                        str(error):
-                    return True
                 print error
                 return False
         
@@ -89,8 +92,8 @@ class Bluetooth(object):
                 props = dbus.Interface(self.__bus.get_object("org.bluez",
                         device.object_path),
                         "org.freedesktop.DBus.Properties")
-                
-                if props.Get("org.bluez.Device1", "Trusted") != 1:
+
+                if not props.Get("org.bluez.Device1", "Trusted"):
                     props.Set("org.bluez.Device1", "Trusted", dbus.Boolean(1))
             except dbus.exceptions.DBusException as error:
                 print error
@@ -103,7 +106,7 @@ if __name__ == "__main__":
 
     bluetooth = Bluetooth()
 
-    devices = bluetooth.scan(10)
+    devices = bluetooth.scan()
 
     for name, address in devices.items():
         print name, address
