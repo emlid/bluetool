@@ -10,6 +10,9 @@ except ImportError:
     import gobject as GObject
 import bluezutils
 
+class BluetoothError(Exception):
+    pass
+
 class Bluetooth(object):
 
     __mainloop = None
@@ -137,24 +140,62 @@ class Bluetooth(object):
 
         return True
 
+    def get_devices(self, condition):
+        conditions = ["Paired", "Connected"]
+
+        if condition not in conditions:
+            raise BluetoothError("get_devices: unknown condition - {}".format(condition))
+        
+        devices = {}
+
+        try:
+            man = dbus.Interface(self.__bus.get_object("org.bluez", "/"),
+                    "org.freedesktop.DBus.ObjectManager")
+            objects = man.GetManagedObjects()
+            
+            for path, interfaces in objects.iteritems():
+                if "org.bluez.Device1" in interfaces:
+                    dev = interfaces["org.bluez.Device1"]
+
+                    props = dbus.Interface(self.__bus.get_object("org.bluez",
+                            path),
+                        "org.freedesktop.DBus.Properties")
+
+                    if props.Get("org.bluez.Device1", condition):
+                        if "Address" not in dev:
+                            continue
+                        if "Name" not in dev:
+                            dev["Name"] = "<unknown>"
+
+                        devices[str(dev["Name"])] = str(dev["Address"])
+
+        except dbus.exceptions.DBusException as error:
+            print error
+      
+        return devices
+
+    def ready_devices_to_pair(self, timeout=10):
+        devices = self.scan(timeout)
+
+        try:
+            for key in self.get_devices("Paired").keys():
+                devices.pop(key)
+        except BluetoothError as error:
+            print error
+            return {}
+
+        return devices
+
 
 if __name__ == "__main__":
 
     bluetooth = Bluetooth()
 
-    print bluetooth.make_discoverable()
+    #print bluetooth.make_discoverable()
 
-    devices = bluetooth.scan()
+    devices = bluetooth.ready_devices_to_pair()
 
     for name, address in devices.items():
         print name, address
-
-    name = "HTC_"
-
-    #if bluetooth.pair(devices[name]):
-    #    if bluetooth.trust(devices[name]):
-    #        print name, "is ready"
-
-    print bluetooth.remove(devices[name])
 
     sys.exit(0)
