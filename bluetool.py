@@ -61,6 +61,26 @@ class Bluetooth(object):
         if Bluetooth.__mainloop is not None: 
             Bluetooth.__mainloop.quit()
 
+    def make_discoverable(self):
+        try:
+            adapter = bluezutils.find_adapter()
+        except Exception as error:
+            print error
+            return False
+        else:
+            try:
+                props = dbus.Interface(self.__bus.get_object("org.bluez",
+                            adapter.object_path),
+                        "org.freedesktop.DBus.Properties")
+
+                if not props.Get("org.bluez.Adapter1", "Discoverable"):
+                    props.Set("org.bluez.Adapter1", "Discoverable", dbus.Boolean(1))
+            except dbus.exceptions.DBusException as error:
+                print error
+                return False
+
+        return True
+
     def pair(self, address):
         try:
             device = bluezutils.find_device(address)
@@ -70,7 +90,7 @@ class Bluetooth(object):
         else:
             try:
                 props = dbus.Interface(self.__bus.get_object("org.bluez",
-                        device.object_path),
+                            device.object_path),
                         "org.freedesktop.DBus.Properties")
 
                 if not props.Get("org.bluez.Device1", "Paired"):
@@ -90,7 +110,7 @@ class Bluetooth(object):
         else:
             try:
                 props = dbus.Interface(self.__bus.get_object("org.bluez",
-                        device.object_path),
+                            device.object_path),
                         "org.freedesktop.DBus.Properties")
 
                 if not props.Get("org.bluez.Device1", "Trusted"):
@@ -106,15 +126,17 @@ if __name__ == "__main__":
 
     bluetooth = Bluetooth()
 
-    devices = bluetooth.scan()
+    bluetooth.make_discoverable()
 
-    for name, address in devices.items():
-        print name, address
+    #devices = bluetooth.scan()
 
-    name = "HTC_"
+    #for name, address in devices.items():
+    #    print name, address
 
-    if bluetooth.pair(devices[name]):
-        if bluetooth.trust(devices[name]):
-            print name, "is ready"
+    #name = "HTC_"
 
-    sys.exit(0)
+    #if bluetooth.pair(devices[name]):
+    #    if bluetooth.trust(devices[name]):
+    #        print name, "is ready"
+
+    #sys.exit(0)
