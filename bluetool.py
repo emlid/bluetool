@@ -121,22 +121,40 @@ class Bluetooth(object):
         
         return True
 
+    def remove(self, address):
+        try:
+            adapter = bluezutils.find_adapter()
+            dev = bluezutils.find_device(address)
+        except Exception as error:
+            print error
+            return False
+        else:
+            try:
+                adapter.RemoveDevice(dev.object_path)
+            except dbus.exceptions.DBusException as error:
+                print error
+                return False
+
+        return True
+
 
 if __name__ == "__main__":
 
     bluetooth = Bluetooth()
 
-    bluetooth.make_discoverable()
+    print bluetooth.make_discoverable()
 
-    #devices = bluetooth.scan()
+    devices = bluetooth.scan()
 
-    #for name, address in devices.items():
-    #    print name, address
+    for name, address in devices.items():
+        print name, address
 
-    #name = "HTC_"
+    name = "HTC_"
 
     #if bluetooth.pair(devices[name]):
     #    if bluetooth.trust(devices[name]):
     #        print name, "is ready"
 
-    #sys.exit(0)
+    print bluetooth.remove(devices[name])
+
+    sys.exit(0)
