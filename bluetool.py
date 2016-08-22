@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-import os
 import sys
+import subprocess
 import dbus
 import dbus.mainloop.glib
 try:
@@ -18,7 +18,7 @@ class Bluetooth(object):
     __mainloop = None
     
     def __init__(self):
-        os.system("rfkill unblock bluetooth")
+        subprocess.check_output("rfkill unblock bluetooth", shell = True)
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         self.__bus = dbus.SystemBus()
 
