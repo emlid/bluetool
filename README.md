@@ -5,6 +5,7 @@
 
 ###Usage
 dict: key - "Name", value - "MAC-address"
+
 Methods of class Bluetooth:
 - `get_devices_to_pair()`, return dict
 - `scan()`, return dict
