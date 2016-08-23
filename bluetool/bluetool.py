@@ -20,6 +20,18 @@ class Bluetooth(object):
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         self.__bus = dbus.SystemBus()
 
+    def get_devices_to_pair(self, timeout=10):
+        devices = self.scan(timeout)
+
+        try:
+            for key in self.get_devices("Paired").keys():
+                devices.pop(key)
+        except BluetoothError as error:
+            print error
+            return {}
+
+        return devices
+
     def scan(self, timeout=10):
         devices = {}
 
@@ -61,6 +73,40 @@ class Bluetooth(object):
     def interrupt_mainloop():
         if Bluetooth.__mainloop is not None: 
             Bluetooth.__mainloop.quit()
+
+    def get_devices(self, condition):
+        conditions = ["Paired", "Connected"]
+
+        if condition not in conditions:
+            raise BluetoothError("get_devices: unknown condition - {}".format(condition))
+        
+        devices = {}
+
+        try:
+            man = dbus.Interface(self.__bus.get_object("org.bluez", "/"),
+                    "org.freedesktop.DBus.ObjectManager")
+            objects = man.GetManagedObjects()
+            
+            for path, interfaces in objects.iteritems():
+                if "org.bluez.Device1" in interfaces:
+                    dev = interfaces["org.bluez.Device1"]
+
+                    props = dbus.Interface(self.__bus.get_object("org.bluez",
+                            path),
+                        "org.freedesktop.DBus.Properties")
+
+                    if props.Get("org.bluez.Device1", condition):
+                        if "Address" not in dev:
+                            continue
+                        if "Name" not in dev:
+                            dev["Name"] = "<unknown>"
+
+                        devices[str(dev["Name"])] = str(dev["Address"])
+
+        except dbus.exceptions.DBusException as error:
+            print error
+      
+        return devices
 
     def make_discoverable(self):
         try:
@@ -138,48 +184,3 @@ class Bluetooth(object):
 
         return True
 
-    def get_devices(self, condition):
-        conditions = ["Paired", "Connected"]
-
-        if condition not in conditions:
-            raise BluetoothError("get_devices: unknown condition - {}".format(condition))
-        
-        devices = {}
-
-        try:
-            man = dbus.Interface(self.__bus.get_object("org.bluez", "/"),
-                    "org.freedesktop.DBus.ObjectManager")
-            objects = man.GetManagedObjects()
-            
-            for path, interfaces in objects.iteritems():
-                if "org.bluez.Device1" in interfaces:
-                    dev = interfaces["org.bluez.Device1"]
-
-                    props = dbus.Interface(self.__bus.get_object("org.bluez",
-                            path),
-                        "org.freedesktop.DBus.Properties")
-
-                    if props.Get("org.bluez.Device1", condition):
-                        if "Address" not in dev:
-                            continue
-                        if "Name" not in dev:
-                            dev["Name"] = "<unknown>"
-
-                        devices[str(dev["Name"])] = str(dev["Address"])
-
-        except dbus.exceptions.DBusException as error:
-            print error
-      
-        return devices
-
-    def ready_devices_to_pair(self, timeout=10):
-        devices = self.scan(timeout)
-
-        try:
-            for key in self.get_devices("Paired").keys():
-                devices.pop(key)
-        except BluetoothError as error:
-            print error
-            return {}
-
-        return devices
