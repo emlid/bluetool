@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import sys
 import subprocess
 import dbus
@@ -185,17 +183,3 @@ class Bluetooth(object):
             return {}
 
         return devices
-
-
-if __name__ == "__main__":
-
-    bluetooth = Bluetooth()
-
-    #print bluetooth.make_discoverable()
-
-    devices = bluetooth.ready_devices_to_pair()
-
-    for name, address in devices.items():
-        print name, address
-
-    sys.exit(0)

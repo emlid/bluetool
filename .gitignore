@@ -1,2 +1,5 @@
+build
+dist
+bluetool.egg-info
 *.pyc
 *~
