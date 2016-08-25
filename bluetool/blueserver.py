@@ -15,11 +15,10 @@ class SerialPort(object):
 
     def __init__(self, channel=1):
         subprocess.check_output("rfkill unblock bluetooth", shell = True)
-        
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         self.bus = dbus.SystemBus()
         self.mainloop = GObject.MainLoop()
-        self.uuid = "1101" #serial port
+        self.uuid = "1101"
         self.opts = {
             "Name": "Reach SPP",
             "Channel": dbus.UInt16(channel),

@@ -12,8 +12,6 @@ class BluetoothError(Exception):
     pass
 
 class Bluetooth(object):
-
-    __mainloop = None
     
     def __init__(self):
         subprocess.check_output("rfkill unblock bluetooth", shell = True)
@@ -43,11 +41,11 @@ class Bluetooth(object):
             try:
                 adapter.StartDiscovery()
                 
-                Bluetooth.__mainloop = GObject.MainLoop()
+                mainloop = GObject.MainLoop()
                 
-                GObject.timeout_add(timeout * 1000, Bluetooth.interrupt_mainloop)
+                GObject.timeout_add(timeout * 1000, mainloop.quit)
 
-                Bluetooth.__mainloop.run()
+                mainloop.run()
 
                 man = dbus.Interface(self.__bus.get_object("org.bluez", "/"),
                         "org.freedesktop.DBus.ObjectManager")
@@ -68,11 +66,6 @@ class Bluetooth(object):
                 print error
 
         return devices
-
-    @staticmethod
-    def interrupt_mainloop():
-        if Bluetooth.__mainloop is not None: 
-            Bluetooth.__mainloop.quit()
 
     def get_devices(self, condition):
         conditions = ["Paired", "Connected"]
