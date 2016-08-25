@@ -1,5 +1,6 @@
 import socket
 import subprocess
+import multiprocessing
 import dbus
 import dbus.service
 import dbus.mainloop.glib
@@ -8,15 +9,16 @@ try:
 except ImportError:
   import gobject as GObject
 
-class SerialPort(dbus.service.Object):
+profile_path = "/org/bluez/myprofile"
+dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+bus = dbus.SystemBus()
+
+class SerialPort(object):
 
     def __init__(self, channel=1):
         subprocess.check_output("rfkill unblock bluetooth", shell = True)
         
-        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-        self.__bus = dbus.SystemBus()
         self.mainloop = GObject.MainLoop()
-        self.path="/org/bluez/myprofile"
         self.uuid = "1101" #serial port
         self.opts = {
             "Name": "Reach SPP",
@@ -24,13 +26,13 @@ class SerialPort(dbus.service.Object):
             "AutoConnect": False
         }
 
-        dbus.service.Object.__init__(self, self.__bus, self.path)
+        self.spp_process = None
 
     def init(self):
         try:
-            manager = dbus.Interface(self.__bus.get_object("org.bluez",
+            manager = dbus.Interface(bus.get_object("org.bluez",
                     "/org/bluez"), "org.bluez.ProfileManager1")
-            manager.RegisterProfile(self.path, self.uuid, self.opts)
+            manager.RegisterProfile(profile_path, self.uuid, self.opts)
         except dbus.exceptions.DBusException as error:
             print error
             return False
@@ -38,23 +40,80 @@ class SerialPort(dbus.service.Object):
         return True
 
     def run(self):
-        self.mainloop.run()
+        self.spp_process = multiprocessing.Process(target = self.mainloop.run)
+        self.spp_process.start()
+
+    def quit(self):
+        if self.spp_process is not None:
+            self.spp_process.terminate()
+            self.spp_process.join()
+            self.spp_process = None
+
+class TCPConnectionError(Exception):
+    pass
+
+class TCPServer():
+    """A wrapper around TCP server."""
+
+    def __init__(self, tcp_port, buffer_size=1024):
+        self.server_socket = None
+        self.client_socket = None
+        self.address = ("localhost", tcp_port)
+        self.buffer_size = buffer_size
+
+    def initialize(self):
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.server_socket.bind(self.address)
+        self.server_socket.listen(5)
+
+    def accept_connection(self):
+        self.client_socket, client_info = self.server_socket.accept() 
+        return client_info
+
+    def kill_connection(self):
+        self.client_socket.close()
+        self.server_socket.close()
+
+    def read(self):
+        return self.client_socket.recv(self.buffer_size)
+
+    def write(self, data):
+        return self.client_socket.send(data)
+
+class BlueServer(dbus.service.Object):
+
+    event = multiprocessing.Event()
+
+    def __init__(self, tcp_port=8043, channel=1):
+        self.spp = SerialPort(channel)
+        dbus.service.Object.__init__(self, bus, profile_path)
+        self.spp.init()
+        self.tcp_server = TCPServer(tcp_port)
+
+    def start(self):
+        #self.spp.run()
+        self.tcp_server.initialize()
+        print "Waiting for TCPClient..."
+        print "Connected:", self.tcp_server.accept_connection()
+
+    def stop(self):
+        self.spp.quit()
 
     @dbus.service.method("org.bluez.Profile1",
                 in_signature="oha{sv}", out_signature="")
     def NewConnection(self, path, fd, properties):
-        self.fd = fd.take()
-        print("NewConnection(%s, %d)" % (path, self.fd))
-
-        server_sock = socket.fromfd(self.fd, socket.AF_UNIX, socket.SOCK_STREAM)
+        print "Connected:", path
+        fd = fd.take()
+        server_sock = socket.fromfd(fd, socket.AF_UNIX, socket.SOCK_STREAM)
         server_sock.setblocking(1)
-        server_sock.send("This is Edison SPP loopback test\nAll data will be loopback\nPlease start:\n")
-
+        
         try:
-            while True:
-                data = server_sock.recv(1024)
-                print("received: %s" % data)
-                server_sock.send("looping back: %s\n" % data)
+            while True:                
+                out = self.tcp_server.read()    
+
+                server_sock.send(out)
+                break
         except IOError:
             pass
 
