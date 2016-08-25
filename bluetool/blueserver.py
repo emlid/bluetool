@@ -9,15 +9,15 @@ try:
 except ImportError:
   import gobject as GObject
 
-profile_path = "/org/bluez/myprofile"
-dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-bus = dbus.SystemBus()
-
 class SerialPort(object):
+
+    profile_path = "/org/bluez/myprofile"
 
     def __init__(self, channel=1):
         subprocess.check_output("rfkill unblock bluetooth", shell = True)
         
+        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+        self.bus = dbus.SystemBus()
         self.mainloop = GObject.MainLoop()
         self.uuid = "1101" #serial port
         self.opts = {
@@ -26,34 +26,18 @@ class SerialPort(object):
             "AutoConnect": False
         }
 
-        self.spp_process = None
-
     def init(self):
         try:
-            manager = dbus.Interface(bus.get_object("org.bluez",
+            manager = dbus.Interface(self.bus.get_object("org.bluez",
                     "/org/bluez"), "org.bluez.ProfileManager1")
-            manager.RegisterProfile(profile_path, self.uuid, self.opts)
+            manager.RegisterProfile(self.profile_path, self.uuid, self.opts)
         except dbus.exceptions.DBusException as error:
             print error
             return False
 
         return True
 
-    def run(self):
-        self.spp_process = multiprocessing.Process(target = self.mainloop.run)
-        self.spp_process.start()
-
-    def quit(self):
-        if self.spp_process is not None:
-            self.spp_process.terminate()
-            self.spp_process.join()
-            self.spp_process = None
-
-class TCPConnectionError(Exception):
-    pass
-
-class TCPServer():
-    """A wrapper around TCP server."""
+class TCPServer(object):  
 
     def __init__(self, tcp_port, buffer_size=1024):
         self.server_socket = None
@@ -81,42 +65,51 @@ class TCPServer():
     def write(self, data):
         return self.client_socket.send(data)
 
-class BlueServer(dbus.service.Object):
-
-    event = multiprocessing.Event()
+class BluetoothServer(dbus.service.Object):
 
     def __init__(self, tcp_port=8043, channel=1):
         self.spp = SerialPort(channel)
-        dbus.service.Object.__init__(self, bus, profile_path)
-        self.spp.init()
+        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+        dbus.service.Object.__init__(self, dbus.SystemBus(), self.spp.profile_path)
         self.tcp_server = TCPServer(tcp_port)
+        self.server_process = None
+        self.mainloop = GObject.MainLoop()
 
-    def start(self):
-        #self.spp.run()
+    def run(self):
+        if not self.spp.init():
+            return False
+        
         self.tcp_server.initialize()
         print "Waiting for TCPClient..."
         print "Connected:", self.tcp_server.accept_connection()
+        
+        self.server_process = multiprocessing.Process(target=self.mainloop.run)
+        self.server_process.start()
 
-    def stop(self):
-        self.spp.quit()
+        return True
+
+    def quit(self):
+        self.tcp_server.kill_connection()
+        
+        if self.server_process is not None:
+            self.server_process.terminate()
+            self.server_process.join()
+            self.server_process = None
 
     @dbus.service.method("org.bluez.Profile1",
                 in_signature="oha{sv}", out_signature="")
     def NewConnection(self, path, fd, properties):
         print "Connected:", path
-        fd = fd.take()
-        server_sock = socket.fromfd(fd, socket.AF_UNIX, socket.SOCK_STREAM)
+        
+        server_sock = socket.fromfd(fd.take(), socket.AF_UNIX, socket.SOCK_STREAM)
         server_sock.setblocking(1)
         
         try:
             while True:                
                 out = self.tcp_server.read()    
-
                 server_sock.send(out)
-                break
-        except IOError:
-            pass
+        except IOError as error:
+            print "Abort connection:", error
 
         server_sock.close()
-        print("all done")
 
