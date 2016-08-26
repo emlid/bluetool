@@ -5,6 +5,7 @@
 
 ###Usage
  - Bluetooth:
+	
 	dict: key - "Name", value - "MAC-address"
 
 	Methods of class Bluetooth:
@@ -31,7 +32,11 @@
 	```
 
  - BluetoothServer:
- 	Use `run()` to create SPP. After connection from bluetooth device you can connect to TCPServer.
+ 	
+	- Step1:Use `run()` to create SPP. 
+	- Step2:Need to connect the bluetooth device.
+	- Step3:TCPServer is available for connection.
+	
 	BluetoothServer will disconnect your device if you lose TCPconnection. Use `quit()` to stop server. 
  
 	#####Example
