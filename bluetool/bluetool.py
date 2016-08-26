@@ -41,10 +41,10 @@ class Bluetooth(object):
                 adapter.StartDiscovery()
                 
                 mainloop = GObject.MainLoop()
-                
                 GObject.timeout_add(timeout*1000, mainloop.quit)
-
                 mainloop.run()
+                
+                adapter.StopDiscovery()
 
                 man = dbus.Interface(self.__bus.get_object("org.bluez", "/"),
                         "org.freedesktop.DBus.ObjectManager")

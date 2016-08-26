@@ -8,11 +8,13 @@
 	dict: key - "Name", value - "MAC-address"
 
 	Methods of class Bluetooth:
-	- `get_devices_to_pair()`, return dict
-	- `scan()`, return dict
+	- `get_devices_to_pair(timeout)`, return dict
+	- `scan(timeout)`, return dict
 	- `get_devices("Paired" or "Connected")`, return dict
-	- `make_discoverable`, return bool
+	- `make_discoverable()`, return bool
 	- `pair(address)`, return bool
+	- `connect(address)`, return bool
+	- `disconnect(address)`, return bool
 	- `trust(address)`, return bool
 	- `remove(address)`, return bool
 
@@ -29,8 +31,8 @@
 	```
 
  - BluetoothServer:
- 	Use `run()` to create TCPserver and SPP, you should connect to TCPserver, 
- 	after SPP will be available for connection. Use `quit()` to stop server. 
+ 	Use `run()` to create SPP. After connection from bluetooth device you can connect to TCPServer.
+	BluetoothServer will disconnect your device if you lose TCPconnection. Use `quit()` to stop server. 
  
 	#####Example
 	```

@@ -24,17 +24,23 @@ class SerialPort(object):
             "Channel": dbus.UInt16(channel),
             "AutoConnect": False
         }
+        self.manager = dbus.Interface(self.bus.get_object("org.bluez",
+                "/org/bluez"), "org.bluez.ProfileManager1")
 
     def initialize(self):
         try:
-            manager = dbus.Interface(self.bus.get_object("org.bluez",
-                    "/org/bluez"), "org.bluez.ProfileManager1")
-            manager.RegisterProfile(self.profile_path, self.uuid, self.opts)
+            self.manager.RegisterProfile(self.profile_path, self.uuid, self.opts)
         except dbus.exceptions.DBusException as error:
             print error
             return False
 
         return True
+    
+    def deinitialize(self):
+        try:    
+            self.manager.UnregisterProfile(self.profile_path)
+        except dbus.exceptions.DBusException:
+            pass
 
 class TCPConnectionError(Exception):
     pass
@@ -101,6 +107,8 @@ class BluetoothServer(dbus.service.Object):
             self.server_process.terminate()
             self.server_process.join()
             self.server_process = None
+        
+        self.spp.deinitialize()
 
     @dbus.service.method("org.bluez.Profile1",
                 in_signature="oha{sv}", out_signature="")
