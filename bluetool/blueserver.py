@@ -14,10 +14,9 @@ class SerialPort(object):
     profile_path = "/org/bluez/myprofile"
 
     def __init__(self, channel=1):
-        subprocess.check_output("rfkill unblock bluetooth", shell = True)
+        subprocess.check_output("rfkill unblock bluetooth", shell=True)
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         self.bus = dbus.SystemBus()
-        self.mainloop = GObject.MainLoop()
         self.uuid = "1101"
         self.opts = {
             "Name": "Reach SPP",
@@ -25,7 +24,7 @@ class SerialPort(object):
             "AutoConnect": False
         }
 
-    def init(self):
+    def initialize(self):
         try:
             manager = dbus.Interface(self.bus.get_object("org.bluez",
                     "/org/bluez"), "org.bluez.ProfileManager1")
@@ -36,6 +35,9 @@ class SerialPort(object):
 
         return True
 
+class TCPConnectionError(Exception):
+    pass
+
 class TCPServer(object):  
 
     def __init__(self, tcp_port, buffer_size=1024):
@@ -45,10 +47,16 @@ class TCPServer(object):
         self.buffer_size = buffer_size
 
     def initialize(self):
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.server_socket.bind(self.address)
-        self.server_socket.listen(5)
+        try:
+            self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.server_socket.bind(self.address)
+            self.server_socket.listen(5)
+        except socket.error as error:
+            print error
+            return False
+
+        return True
 
     def accept_connection(self):
         self.client_socket, client_info = self.server_socket.accept() 
@@ -75,22 +83,24 @@ class BluetoothServer(dbus.service.Object):
         self.mainloop = GObject.MainLoop()
 
     def run(self):
-        if not self.spp.init():
+        if not self.spp.initialize():
             return False
         
-        self.tcp_server.initialize()
+        if not self.tcp_server.initialize():
+            return False
         print "Waiting for TCPClient..."
         print "Connected:", self.tcp_server.accept_connection()
         
         self.server_process = multiprocessing.Process(target=self.mainloop.run)
         self.server_process.start()
-
+        
         return True
 
     def quit(self):
         self.tcp_server.kill_connection()
         
         if self.server_process is not None:
+            self.mainloop.quit()
             self.server_process.terminate()
             self.server_process.join()
             self.server_process = None
@@ -105,10 +115,20 @@ class BluetoothServer(dbus.service.Object):
         
         try:
             while True:                
-                out = self.tcp_server.read()    
-                server_sock.send(out)
+                data = self.tcp_server.read()    
+                if not data:
+                    raise TCPConnectionError("External connection shutdown")
+                server_sock.send(data)
         except IOError as error:
             print "Abort connection:", error
+            server_sock.close()
+        except TCPConnectionError as error:
+            self.tcp_server.kill_connection()
+            self.tcp_server.initialize()
+            server_sock.close()
+            print "Waiting for TCPClient..."
+            print "Connected:", self.tcp_server.accept_connection()
+        else:
+            server_sock.close()
 
-        server_sock.close()
 

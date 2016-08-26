@@ -1,4 +1,3 @@
-import sys
 import subprocess
 import dbus
 import dbus.mainloop.glib
@@ -14,7 +13,7 @@ class BluetoothError(Exception):
 class Bluetooth(object):
     
     def __init__(self):
-        subprocess.check_output("rfkill unblock bluetooth", shell = True)
+        subprocess.check_output("rfkill unblock bluetooth", shell=True)
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         self.__bus = dbus.SystemBus()
 
@@ -43,7 +42,7 @@ class Bluetooth(object):
                 
                 mainloop = GObject.MainLoop()
                 
-                GObject.timeout_add(timeout * 1000, mainloop.quit)
+                GObject.timeout_add(timeout*1000, mainloop.quit)
 
                 mainloop.run()
 
@@ -71,7 +70,8 @@ class Bluetooth(object):
         conditions = ["Paired", "Connected"]
 
         if condition not in conditions:
-            raise BluetoothError("get_devices: unknown condition - {}".format(condition))
+            raise BluetoothError("get_devices: unknown condition - {}".\
+                    format(condition))
         
         devices = {}
 
