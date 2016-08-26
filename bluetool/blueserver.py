@@ -8,6 +8,7 @@ try:
   from gi.repository import GObject
 except ImportError:
   import gobject as GObject
+from bluetool import Bluetooth
 
 class SerialPort(object):
 
@@ -36,6 +37,9 @@ class SerialPort(object):
         return True
 
 class TCPConnectionError(Exception):
+    pass
+
+class TCPServerError(Exception):
     pass
 
 class TCPServer(object):  
@@ -78,7 +82,7 @@ class BluetoothServer(dbus.service.Object):
         self.spp = SerialPort(channel)
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         dbus.service.Object.__init__(self, dbus.SystemBus(), self.spp.profile_path)
-        self.tcp_server = TCPServer(tcp_port)
+        self.tcp_port = tcp_port
         self.server_process = None
         self.mainloop = GObject.MainLoop()
 
@@ -86,19 +90,12 @@ class BluetoothServer(dbus.service.Object):
         if not self.spp.initialize():
             return False
         
-        if not self.tcp_server.initialize():
-            return False
-        print "Waiting for TCPClient..."
-        print "Connected:", self.tcp_server.accept_connection()
-        
         self.server_process = multiprocessing.Process(target=self.mainloop.run)
         self.server_process.start()
         
         return True
 
     def quit(self):
-        self.tcp_server.kill_connection()
-        
         if self.server_process is not None:
             self.mainloop.quit()
             self.server_process.terminate()
@@ -108,27 +105,39 @@ class BluetoothServer(dbus.service.Object):
     @dbus.service.method("org.bluez.Profile1",
                 in_signature="oha{sv}", out_signature="")
     def NewConnection(self, path, fd, properties):
-        print "Connected:", path
-        
-        server_sock = socket.fromfd(fd.take(), socket.AF_UNIX, socket.SOCK_STREAM)
-        server_sock.setblocking(1)
-        
-        try:
-            while True:                
-                data = self.tcp_server.read()    
-                if not data:
-                    raise TCPConnectionError("External connection shutdown")
-                server_sock.send(data)
-        except IOError as error:
-            print "Abort connection:", error
-            server_sock.close()
-        except TCPConnectionError as error:
-            self.tcp_server.kill_connection()
-            self.tcp_server.initialize()
-            server_sock.close()
-            print "Waiting for TCPClient..."
-            print "Connected:", self.tcp_server.accept_connection()
-        else:
-            server_sock.close()
+        address = str(path)
+        address = address[len(address)-17:len(address)]
+        address = address.replace("_", ":")
 
+        print "Connected:", address
+
+        try:
+            tcp_server = TCPServer(self.tcp_port)
+            if not tcp_server.initialize():
+                raise TCPServerError("TCP server did not start")
+            
+            print "Waiting for TCPClient..."
+            print "Connected:", tcp_server.accept_connection()
+
+            server_sock = socket.fromfd(fd.take(), socket.AF_UNIX, socket.SOCK_STREAM)
+            server_sock.setblocking(1)
+            
+            try:
+                while True:                
+                    data = tcp_server.read()    
+                    if not data:
+                        raise TCPConnectionError("External connection shutdown")
+                    server_sock.send(data)
+            except IOError as error:
+                print "Abort connection by user from bluetooth device"
+            except TCPConnectionError as error:
+                print error
+
+            server_sock.close()
+            tcp_server.kill_connection()
+        except TCPServerError as error:
+            print error
+
+        bluetooth = Bluetooth()
+        bluetooth.disconnect(address)
 

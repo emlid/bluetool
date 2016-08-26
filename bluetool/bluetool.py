@@ -141,6 +141,47 @@ class Bluetooth(object):
         
         return True
 
+    def connect(self, address):
+        try:
+            device = bluezutils.find_device(address)
+        except Exception as error:
+            print error
+            return False
+        else:
+            try:
+                props = dbus.Interface(self.__bus.get_object("org.bluez",
+                            device.object_path),
+                        "org.freedesktop.DBus.Properties")
+
+                if not props.Get("org.bluez.Device1", "Connected"):
+                    device.Connect()
+            except dbus.exceptions.DBusException as error:
+                print error
+                return False
+        
+        return True
+
+    def disconnect(self, address):
+        try:
+            device = bluezutils.find_device(address)
+        except Exception as error:
+            print error
+            return False
+        else:
+            try:
+                props = dbus.Interface(self.__bus.get_object("org.bluez",
+                            device.object_path),
+                        "org.freedesktop.DBus.Properties")
+
+                if props.Get("org.bluez.Device1", "Connected"):
+                    device.Disconnect()
+            except dbus.exceptions.DBusException as error:
+                print error
+                return False
+        
+        return True
+
+
     def trust(self, address):
         try:
             device = bluezutils.find_device(address)
