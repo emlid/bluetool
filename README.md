@@ -34,7 +34,7 @@
  - BluetoothServer:
  	
 	- Step1: Use `run()` to create SPP. 
-	- Step2: Need to connect the bluetooth device.
+	- Step2: Connect the bluetooth device.
 	- Step3: TCPServer is available for connection.
 	
 	BluetoothServer will disconnect your device if you lose TCPconnection. Use `quit()` to stop server. 
