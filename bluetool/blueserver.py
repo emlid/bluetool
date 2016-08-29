@@ -1,4 +1,5 @@
 import socket
+import select
 import subprocess
 import multiprocessing
 import dbus
@@ -84,11 +85,14 @@ class TCPServer(object):
 
 class BluetoothServer(dbus.service.Object):
 
-    def __init__(self, tcp_port=8043, channel=1):
+    def __init__(self, tcp_port=8043, channel=1,
+            tcp_buffer_size=1024, blue_buffer_size=1024):
         self.spp = SerialPort(channel)
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         dbus.service.Object.__init__(self, dbus.SystemBus(), self.spp.profile_path)
         self.tcp_port = tcp_port
+        self.tcp_buffer_size = tcp_buffer_size
+        self.blue_buffer_size = blue_buffer_size
         self.server_process = None
         self.mainloop = GObject.MainLoop()
 
@@ -120,28 +124,38 @@ class BluetoothServer(dbus.service.Object):
         print "Connected:", address
 
         try:
-            tcp_server = TCPServer(self.tcp_port)
+            tcp_server = TCPServer(self.tcp_port, self.tcp_buffer_size)
             if not tcp_server.initialize():
                 raise TCPServerError("TCP server did not start")
             
             print "Waiting for TCPClient..."
             print "Connected:", tcp_server.accept_connection()
 
-            server_sock = socket.fromfd(fd.take(), socket.AF_UNIX, socket.SOCK_STREAM)
-            server_sock.setblocking(1)
+            blue_socket = socket.fromfd(fd.take(), socket.AF_UNIX, socket.SOCK_STREAM)
+            blue_socket.setblocking(1)
             
             try:
-                while True:                
-                    data = tcp_server.read()    
-                    if not data:
-                        raise TCPConnectionError("External connection shutdown")
-                    server_sock.send(data)
+                while True:
+                    read, write, error = select.select([tcp_server.client_socket,
+                            blue_socket], [], [])
+
+                    for sock in read:
+                        if sock == tcp_server.client_socket:
+                            data = tcp_server.read()
+                        if not data:
+                                raise TCPConnectionError("External connection shutdown")
+                            blue_socket.send(data)
+
+                        if sock == blue_socket:
+                            data = blue_socket.recv(self.blue_buffer_size)
+                            if data:
+                                tcp_server.write(data)
             except IOError as error:
                 print "Abort connection by user from bluetooth device"
             except TCPConnectionError as error:
                 print error
 
-            server_sock.close()
+            blue_socket.close()
             tcp_server.kill_connection()
         except TCPServerError as error:
             print error
