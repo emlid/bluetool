@@ -142,7 +142,7 @@ class BluetoothServer(dbus.service.Object):
                     for sock in read:
                         if sock == tcp_server.client_socket:
                             data = tcp_server.read()
-                        if not data:
+                            if not data:
                                 raise TCPConnectionError("External connection shutdown")
                             blue_socket.send(data)
 
@@ -151,7 +151,7 @@ class BluetoothServer(dbus.service.Object):
                             if data:
                                 tcp_server.write(data)
             except IOError as error:
-                print "Abort connection by user from bluetooth device"
+                print error
             except TCPConnectionError as error:
                 print error
 
