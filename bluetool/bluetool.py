@@ -39,6 +39,7 @@ try:
     from gi.repository import GObject
 except ImportError:
     import gobject as GObject
+import threading
 import bluezutils
 
 class BluetoothError(Exception):
@@ -50,9 +51,36 @@ class Bluetooth(object):
         subprocess.check_output("rfkill unblock bluetooth", shell=True)
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         self.__bus = dbus.SystemBus()
+        self.mainloop = GObject.MainLoop()
+        self.scan_thread = None
+        self.timer = None
 
-    def get_devices_to_pair(self, timeout=10):
-        devices = self.scan(timeout)
+    def start_scanning(self, timeout=10):
+        self.scan_thread = threading.Thread(target=self.scan)
+        self.scan_thread.start()
+
+        self.timer = threading.Timer(timeout, self.stop_scanning)
+        self.timer.start()
+
+    def scan(self):
+        try:
+            adapter = bluezutils.find_adapter()
+        except Exception as error:
+            print error
+        else:
+            try:
+                adapter.StartDiscovery()
+                self.mainloop.run()                
+                adapter.StopDiscovery()
+            except dbus.exceptions.DBusException as error:
+                print error
+
+    def stop_scanning(self):
+        self.mainloop.quit()
+        self.scan_thread.join()
+
+    def get_devices_to_pair(self):
+        devices = self.get_devices("Scanned")
 
         try:
             for key in self.get_devices("Paired").keys():
@@ -63,45 +91,8 @@ class Bluetooth(object):
 
         return devices
 
-    def scan(self, timeout=10):
-        devices = {}
-
-        try:
-            adapter = bluezutils.find_adapter()
-        except Exception as error:
-            print error
-        else:
-            try:
-                adapter.StartDiscovery()
-                
-                mainloop = GObject.MainLoop()
-                GObject.timeout_add(timeout*1000, mainloop.quit)
-                mainloop.run()
-                
-                adapter.StopDiscovery()
-
-                man = dbus.Interface(self.__bus.get_object("org.bluez", "/"),
-                        "org.freedesktop.DBus.ObjectManager")
-                objects = man.GetManagedObjects()
-                
-                for path, interfaces in objects.iteritems():
-                    if "org.bluez.Device1" in interfaces:
-                        dev = interfaces["org.bluez.Device1"]
-
-                        if "Address" not in dev:
-                            continue
-                        if "Name" not in dev:
-                            dev["Name"] = "<unknown>"
-                        
-                        devices[str(dev["Name"])] = str(dev["Address"])
-                
-            except dbus.exceptions.DBusException as error:
-                print error
-
-        return devices
-
     def get_devices(self, condition):
-        conditions = ["Paired", "Connected"]
+        conditions = ["Scanned", "Paired", "Connected"]
 
         if condition not in conditions:
             raise BluetoothError("get_devices: unknown condition - {}".\
@@ -118,17 +109,25 @@ class Bluetooth(object):
                 if "org.bluez.Device1" in interfaces:
                     dev = interfaces["org.bluez.Device1"]
 
-                    props = dbus.Interface(self.__bus.get_object("org.bluez",
-                            path),
-                        "org.freedesktop.DBus.Properties")
-
-                    if props.Get("org.bluez.Device1", condition):
+                    if condition == "Scanned":
                         if "Address" not in dev:
                             continue
                         if "Name" not in dev:
                             dev["Name"] = "<unknown>"
-
+                    
                         devices[str(dev["Name"])] = str(dev["Address"])
+                    else:
+                        props = dbus.Interface(self.__bus.get_object("org.bluez",
+                                path),
+                            "org.freedesktop.DBus.Properties")
+
+                        if props.Get("org.bluez.Device1", condition):
+                            if "Address" not in dev:
+                                continue
+                            if "Name" not in dev:
+                                dev["Name"] = "<unknown>"
+
+                            devices[str(dev["Name"])] = str(dev["Address"])
 
         except dbus.exceptions.DBusException as error:
             print error
