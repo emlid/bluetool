@@ -56,16 +56,17 @@ class Bluetooth(object):
         self.timer = None
 
     def start_scanning(self, timeout=10):
-        self.scan_thread = threading.Thread(target=self.scan)
-        self.scan_thread.start()
+        if self.scan_thread is None:
+            self.scan_thread = threading.Thread(target=self.scan)
+            self.scan_thread.start()
 
-        self.timer = threading.Timer(timeout, self.stop_scanning)
-        self.timer.start()
+            self.timer = threading.Timer(timeout, self.stop_scanning)
+            self.timer.start()
 
     def scan(self):
         try:
             adapter = bluezutils.find_adapter()
-        except Exception as error:
+        except bluezutils.BluezUtilError as error:
             print error
         else:
             try:
@@ -76,8 +77,10 @@ class Bluetooth(object):
                 print error
 
     def stop_scanning(self):
-        self.mainloop.quit()
-        self.scan_thread.join()
+        if self.scan_thread is not None:
+            self.mainloop.quit()
+            self.scan_thread.join()
+            self.scan_thread = None
 
     def get_devices_to_pair(self):
         devices = self.get_devices("Scanned")
@@ -137,7 +140,7 @@ class Bluetooth(object):
     def make_discoverable(self):
         try:
             adapter = bluezutils.find_adapter()
-        except Exception as error:
+        except bluezutils.BluezUtilError as error:
             print error
             return False
         else:
@@ -154,12 +157,18 @@ class Bluetooth(object):
 
         return True
 
-    def pair(self, address):
+    def start_pairing(self, address, callback=None, socket=None):
+        pair_thread = threading.Thread(target=self.pair,
+                args=(address, callback, socket))
+        pair_thread.start()
+
+    def pair(self, address, callback=None, socket=None):
+        result = False
+
         try:
             device = bluezutils.find_device(address)
-        except Exception as error:
+        except bluezutils.BluezUtilError as error:
             print error
-            return False
         else:
             try:
                 props = dbus.Interface(self.__bus.get_object("org.bluez",
@@ -170,14 +179,18 @@ class Bluetooth(object):
                     device.Pair()
             except dbus.exceptions.DBusException as error:
                 print error
-                return False
+            else:
+                result = True
         
-        return True
+        if callback is not None and socket is not None:
+            callback(socket, result)
+        
+        return result
 
     def connect(self, address):
         try:
             device = bluezutils.find_device(address)
-        except Exception as error:
+        except bluezutils.BluezUtilError as error:
             print error
             return False
         else:
@@ -197,7 +210,7 @@ class Bluetooth(object):
     def disconnect(self, address):
         try:
             device = bluezutils.find_device(address)
-        except Exception as error:
+        except bluezutils.BluezUtilError as error:
             print error
             return False
         else:
@@ -218,7 +231,7 @@ class Bluetooth(object):
     def trust(self, address):
         try:
             device = bluezutils.find_device(address)
-        except Exception as error:
+        except bluezutils.BluezUtilError as error:
             print error
             return False
         else:
@@ -239,7 +252,7 @@ class Bluetooth(object):
         try:
             adapter = bluezutils.find_adapter()
             dev = bluezutils.find_device(address)
-        except Exception as error:
+        except bluezutils.BluezUtilError as error:
             print error
             return False
         else:
