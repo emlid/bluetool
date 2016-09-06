@@ -156,18 +156,26 @@ class Bluetooth(object):
 
         return True
 
-    def start_pairing(self, address, callback=None, socket=None):
-        pair_thread = threading.Thread(target=self.pair,
-                args=(address, callback, socket))
+    def start_pairing(self, address, callback=None, args=None):
+        pair_thread = threading.Thread(target=send_report,
+                args=(address, callback, args))
         pair_thread.start()
 
-    def pair(self, address, callback=None, socket=None):
+    def send_report(self, address, callback=None, agrs=None):
         result = False
 
+        if self.pair(address) and self.trust(address):
+            result = True
+
+        if callback is not None:
+            callback(result, args)
+
+    def pair(self, address):
         try:
             device = bluezutils.find_device(address)
         except bluezutils.BluezUtilError as error:
             print error
+            return False
         else:
             try:
                 props = dbus.Interface(self.__bus.get_object("org.bluez",
@@ -178,13 +186,9 @@ class Bluetooth(object):
                     device.Pair()
             except dbus.exceptions.DBusException as error:
                 print error
-            else:
-                result = True
+                return False
         
-        if callback is not None and socket is not None:
-            callback(socket, result, address)
-        
-        return result
+        return True
 
     def connect(self, address):
         try:
@@ -225,7 +229,6 @@ class Bluetooth(object):
                 return False
         
         return True
-
 
     def trust(self, address):
         try:
