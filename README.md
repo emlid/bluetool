@@ -6,13 +6,17 @@
 ###Usage
  - Bluetooth:
 	
-	dict: key - "Name", value - "MAC-address"
+	list: [{key - "Name", value - "MAC-address"}, ...]
 
 	Methods of class Bluetooth:
-	- `get_devices_to_pair(timeout)`, return dict
-	- `scan(timeout)`, return dict
-	- `get_devices("Paired" or "Connected")`, return dict
+	- `start_scanning(timeout)`: `scan` inside thread
+	- `scan(timeout)`
+	- `get_devices_to_pair()`, return list
+	- `get_available_devices()`, return list
+	- `get_paired_devices()`, return list
+	- `get_connected_devices()`, return list
 	- `make_discoverable()`, return bool
+	- `start_pairing(address)`: `pair` inside thread
 	- `pair(address)`, return bool
 	- `connect(address)`, return bool
 	- `disconnect(address)`, return bool
@@ -25,10 +29,11 @@
 
 	bluetooth = Bluetooth()
 
-	devices = bluetooth.scan()
+	bluetooth.scan()
 
-	for key, value in devices.items():
-	    print key, value
+	devices = get_available_devices()
+
+	print devices
 	```
 
  - BluetoothServer:
