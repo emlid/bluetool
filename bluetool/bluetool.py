@@ -45,16 +45,16 @@ import bluezutils
 class Bluetooth(object):
     
     def __init__(self):
-        #subprocess.check_output("rfkill unblock bluetooth", shell=True)
+        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         self.__bus = dbus.SystemBus()
         self.scan_thread = None
 
-    def start_scanning(self, timeout=5):
+    def start_scanning(self, timeout=10):
         if self.scan_thread is None:
             self.scan_thread = threading.Thread(target=self.scan, args=(timeout,))
             self.scan_thread.start()
 
-    def scan(self, timeout=5):
+    def scan(self, timeout=10):
         try:
             adapter = bluezutils.find_adapter()
         except bluezutils.BluezUtilError as error:
@@ -75,8 +75,8 @@ class Bluetooth(object):
     def get_devices_to_pair(self):
         devices = self.get_available_devices()
 
-        for key in self.get_paired_devices().keys():
-            devices.pop(key)
+        for key in self.get_paired_devices():
+            devices.remove(key)
  
         return devices
 
@@ -90,7 +90,7 @@ class Bluetooth(object):
         return self.__get_devices("Connected")
 
     def __get_devices(self, condition):
-        devices = {}
+        devices = []
 
         conditions = ["Available", "Paired", "Connected"]
 
@@ -113,7 +113,12 @@ class Bluetooth(object):
                         if "Name" not in dev:
                             dev["Name"] = "<unknown>"
                     
-                        devices[str(dev["Name"])] = str(dev["Address"])
+                        device = {
+                            "mac_address": str(dev["Address"]),
+                            "name": str(dev["Name"])
+                        }
+
+                        devices.append(device)
                     else:
                         props = dbus.Interface(self.__bus.get_object("org.bluez",
                                 path),
@@ -125,7 +130,12 @@ class Bluetooth(object):
                             if "Name" not in dev:
                                 dev["Name"] = "<unknown>"
 
-                            devices[str(dev["Name"])] = str(dev["Address"])
+                            device = {
+                                "mac_address": str(dev["Address"]),
+                                "name": str(dev["Name"])
+                            }
+
+                            devices.append(device)
 
         except dbus.exceptions.DBusException as error:
             print error
@@ -152,12 +162,12 @@ class Bluetooth(object):
 
         return True
 
-    def start_pairing(self, address, callback=None, args=()):
+    def start_pairing(self, address, callback=None, args=[]):
         pair_thread = threading.Thread(target=self.send_report,
                 args=(address, callback, args))
         pair_thread.start()
 
-    def send_report(self, address, callback=None, args=()):
+    def send_report(self, address, callback=None, args=[]):
         result = False
 
         if self.pair(address) and self.trust(address):

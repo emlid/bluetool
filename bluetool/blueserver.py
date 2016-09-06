@@ -50,7 +50,6 @@ class SerialPort(object):
     profile_path = "/org/bluez/myprofile"
 
     def __init__(self, channel=1):
-        #subprocess.check_output("rfkill unblock bluetooth", shell=True)
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         self.bus = dbus.SystemBus()
         self.uuid = "1101"
