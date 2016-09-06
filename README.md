@@ -6,7 +6,7 @@
 ###Usage
  - Bluetooth:
 	
-	list: [{key - "Name", value - "MAC-address"}, ...]
+	list: [ {"name": Name, "mac_address": MAC-address}, ... ]
 
 	Methods of class Bluetooth:
 	- `start_scanning(timeout)`: `scan` inside thread
