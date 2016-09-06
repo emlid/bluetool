@@ -161,7 +161,7 @@ class Bluetooth(object):
                 args=(address, callback, args))
         pair_thread.start()
 
-    def send_report(self, address, callback=None, agrs=None):
+    def send_report(self, address, callback=None, args=None):
         result = False
 
         if self.pair(address) and self.trust(address):
