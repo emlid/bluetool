@@ -48,20 +48,19 @@ class BluetoothError(Exception):
 class Bluetooth(object):
     
     def __init__(self):
-        subprocess.check_output("rfkill unblock bluetooth", shell=True)
+        #subprocess.check_output("rfkill unblock bluetooth", shell=True)
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         self.__bus = dbus.SystemBus()
         self.mainloop = GObject.MainLoop()
         self.scan_thread = None
-        self.timer = None
 
     def start_scanning(self, timeout=10):
         if self.scan_thread is None:
             self.scan_thread = threading.Thread(target=self.scan)
             self.scan_thread.start()
 
-            self.timer = threading.Timer(timeout, self.stop_scanning)
-            self.timer.start()
+            timer = threading.Timer(timeout, self.stop_scanning)
+            timer.start()
 
     def scan(self):
         try:
@@ -71,7 +70,7 @@ class Bluetooth(object):
         else:
             try:
                 adapter.StartDiscovery()
-                self.mainloop.run()                
+                self.mainloop.run()
                 adapter.StopDiscovery()
             except dbus.exceptions.DBusException as error:
                 print error
@@ -183,7 +182,7 @@ class Bluetooth(object):
                 result = True
         
         if callback is not None and socket is not None:
-            callback(socket, result)
+            callback(socket, result, address)
         
         return result
 
