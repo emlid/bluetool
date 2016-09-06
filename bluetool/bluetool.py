@@ -42,27 +42,19 @@ except ImportError:
 import threading
 import bluezutils
 
-class BluetoothError(Exception):
-    pass
-
 class Bluetooth(object):
     
     def __init__(self):
         #subprocess.check_output("rfkill unblock bluetooth", shell=True)
-        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         self.__bus = dbus.SystemBus()
-        self.mainloop = GObject.MainLoop()
         self.scan_thread = None
 
-    def start_scanning(self, timeout=10):
+    def start_scanning(self, timeout=5):
         if self.scan_thread is None:
-            self.scan_thread = threading.Thread(target=self.scan)
+            self.scan_thread = threading.Thread(target=self.scan, args=(timeout))
             self.scan_thread.start()
 
-            timer = threading.Timer(timeout, self.stop_scanning)
-            timer.start()
-
-    def scan(self):
+    def scan(self, timeout=5):
         try:
             adapter = bluezutils.find_adapter()
         except bluezutils.BluezUtilError as error:
@@ -70,37 +62,41 @@ class Bluetooth(object):
         else:
             try:
                 adapter.StartDiscovery()
-                self.mainloop.run()
+
+                import time
+                time.sleep(timeout)
+
                 adapter.StopDiscovery()
             except dbus.exceptions.DBusException as error:
                 print error
 
-    def stop_scanning(self):
-        if self.scan_thread is not None:
-            self.mainloop.quit()
-            self.scan_thread.join()
-            self.scan_thread = None
+        self.scan_thread = None
 
     def get_devices_to_pair(self):
-        devices = self.get_devices("Scanned")
+        devices = self.get_available_devices()
 
-        try:
-            for key in self.get_devices("Paired").keys():
-                devices.pop(key)
-        except BluetoothError as error:
-            print error
-            return {}
-
+        for key in self.get_paired_devices.keys():
+            devices.pop(key)
+ 
         return devices
 
-    def get_devices(self, condition):
-        conditions = ["Scanned", "Paired", "Connected"]
+    def get_available_devices(self):
+        return self.__get_devices("Available")
+
+    def get_paired_devices(self):
+        return self.__get_devices("Paired")
+
+    def get_connected_devices(self):
+        return self.__get_devices("Connected")
+
+    def __get_devices(self, condition):
+        devices = {}
+
+        conditions = ["Available", "Paired", "Connected"]
 
         if condition not in conditions:
-            raise BluetoothError("get_devices: unknown condition - {}".\
-                    format(condition))
-        
-        devices = {}
+            print "__get_devices: unknown condition - {}".format(condition)
+            return devices
 
         try:
             man = dbus.Interface(self.__bus.get_object("org.bluez", "/"),
@@ -111,7 +107,7 @@ class Bluetooth(object):
                 if "org.bluez.Device1" in interfaces:
                     dev = interfaces["org.bluez.Device1"]
 
-                    if condition == "Scanned":
+                    if condition == "Available":
                         if "Address" not in dev:
                             continue
                         if "Name" not in dev:
