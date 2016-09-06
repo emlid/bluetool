@@ -51,7 +51,7 @@ class Bluetooth(object):
 
     def start_scanning(self, timeout=5):
         if self.scan_thread is None:
-            self.scan_thread = threading.Thread(target=self.scan, args=(timeout))
+            self.scan_thread = threading.Thread(target=self.scan, args=(timeout,))
             self.scan_thread.start()
 
     def scan(self, timeout=5):
@@ -75,7 +75,7 @@ class Bluetooth(object):
     def get_devices_to_pair(self):
         devices = self.get_available_devices()
 
-        for key in self.get_paired_devices.keys():
+        for key in self.get_paired_devices().keys():
             devices.pop(key)
  
         return devices
@@ -152,12 +152,12 @@ class Bluetooth(object):
 
         return True
 
-    def start_pairing(self, address, callback=None, args=None):
-        pair_thread = threading.Thread(target=send_report,
+    def start_pairing(self, address, callback=None, args=()):
+        pair_thread = threading.Thread(target=self.send_report,
                 args=(address, callback, args))
         pair_thread.start()
 
-    def send_report(self, address, callback=None, args=None):
+    def send_report(self, address, callback=None, args=()):
         result = False
 
         if self.pair(address) and self.trust(address):
