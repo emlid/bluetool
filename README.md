@@ -1,6 +1,6 @@
 ###Bluetool
 
-Bluetooth with D-Bus API.
+Bluetooth with D-Bus API. Dependence: python-dbus.
 
 ###Install
 `make install`
