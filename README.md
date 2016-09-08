@@ -1,4 +1,6 @@
-###Bluetooth with D-Bus API
+###Bluetool
+
+Bluetooth with D-Bus API.
 
 ###Install
 `make install`
