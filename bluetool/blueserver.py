@@ -1,4 +1,3 @@
-
 # Bluetool code is placed under the GPL license.
 # Written by Aleksandr Aleksandrov (aleksandr.aleksandrov@emlid.com)
 # Copyright (c) 2016, Emlid Limited
@@ -24,7 +23,6 @@
 
 import socket
 import select
-import subprocess
 import multiprocessing
 import dbus
 import dbus.service

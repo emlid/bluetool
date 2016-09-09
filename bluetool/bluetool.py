@@ -21,7 +21,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Bluetool.  If not, see <http://www.gnu.org/licenses/>.
 
-import subprocess
 import dbus
 import dbus.mainloop.glib
 try:
