@@ -33,7 +33,7 @@ Bluetooth with D-Bus API. Dependence: python-dbus.
 
 	bluetooth.scan()
 
-	devices = get_available_devices()
+	devices = bluetooth.get_available_devices()
 
 	print devices
 	```
