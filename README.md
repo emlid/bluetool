@@ -59,3 +59,6 @@ or clone and `make install`
 	...
 	server.quit()
 	```
+
+###Info:
+[Emlid](https://emlid.com/)
