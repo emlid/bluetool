@@ -3,7 +3,8 @@
 Bluetooth with D-Bus API. Dependence: python-dbus.
 
 ###Install
-`sudo pip install bluetool`
+
+`pip install bluetool`
 
 or clone and `make install`
 
