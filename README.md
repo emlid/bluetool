@@ -1,65 +1,80 @@
-###Bluetool
+### Bluetool
 
-Bluetooth with D-Bus API. Dependence: python-dbus.
+A simple Python API for Bluetooth D-Bus calls. Allows easy pairing, connecting and scanning. Also provides a TCP-to-RFCOMM socket bridge for data transfer.
 
-###Install
+#### Dependencies
+
+`python-dbus`
+
+The package was tested with **Python 2.7**
+
+#### Installation
 
 `pip install bluetool`
 
-or clone and `make install`
+or clone and run `make install`
 
-###Usage
- - Bluetooth:
+#### Usage
+
+- Bluetooth:
 	
-	list: [ {"name": Name, "mac_address": MAC-address}, ... ]
+	list: `[{"name": Name, "mac_address": MAC-address}, ... ]`
 
 	Methods of class Bluetooth:
-	- `start_scanning(timeout)`: `scan` inside thread
+	- `start_scanning(timeout)`: `scan` in background
 	- `scan(timeout)`
-	- `get_devices_to_pair()`, return list
-	- `get_available_devices()`, return list
-	- `get_paired_devices()`, return list
-	- `get_connected_devices()`, return list
-	- `make_discoverable()`, return bool
-	- `start_pairing(address)`: `pair` inside thread
-	- `pair(address)`, return bool
-	- `connect(address)`, return bool
-	- `disconnect(address)`, return bool
-	- `trust(address)`, return bool
-	- `remove(address)`, return bool
+	- `get_devices_to_pair()`, returns list
+	- `get_available_devices()`, returns list
+	- `get_paired_devices()`, returns list
+	- `get_connected_devices()`, returns list
+	- `make_discoverable()`, returns bool
+	- `start_pairing(address)`: `pair` in background
+	- `pair(address)`, returns bool
+	- `connect(address)`, returns bool
+	- `disconnect(address)`, returns bool
+	- `trust(address)`, returns bool
+	- `remove(address)`, returns bool
 
-	#####Example
-	```
-	from bluetool import Bluetooth
-
-	bluetooth = Bluetooth()
-
-	bluetooth.scan()
-
-	devices = bluetooth.get_available_devices()
-
-	print devices
-	```
-
- - BluetoothServer:
+- BluetoothServer:
  	
-	- Step1: Use `run()` to create SPP. 
-	- Step2: Connect the bluetooth device.
-	- Step3: TCPServer is available for connection.
+	- Step1: Use `run()` to create SPP
+	- Step2: Connect the bluetooth device
+	- Step3: TCPServer is available for connection
 	
-	BluetoothServer will disconnect your device if you lose TCPconnection. Use `quit()` to stop server. 
- 
-	#####Example
-	```
-	from bluetool import BluetoothServer
+	BluetoothServer will disconnect your device if you lose TCPconnection. Use `quit()` to stop server.
 
-	port = 8100
-	server = BluetoothServer(port)
+##### Examples
 
-	server.run()
-	...
-	server.quit()
-	```
+- Scanning
+```
+from bluetool import Bluetooth
 
-###Info:
-[Emlid](https://emlid.com/)
+bluetooth = Bluetooth()
+
+bluetooth.scan()
+
+devices = bluetooth.get_available_devices()
+
+print devices
+```
+- Using the RFCOMM-TCP Bridge
+```
+from bluetool import BluetoothServer
+
+port = 8100
+server = BluetoothServer(port)
+server.run()
+...
+server.quit()
+```
+
+### About the project
+
+This package was written by [Aleksandr Aleksandrov](https://github.com/AD-Aleksandrov) working at [Emlid](https://emlid.com/).
+
+The bluetool was originally written for the [Emlid Reach RTK receiver](https://emlid.com/reach/), but we decided to open source it, as there is no easy Python API for BT pairing/connecting. Feel free to add issues and submit pull requests.
+
+
+
+
+
