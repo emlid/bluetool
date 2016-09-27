@@ -162,7 +162,7 @@ class Bluetooth(object):
             result = True
 
         if callback is not None:
-            callback(result, args)
+            callback(result, *args)
 
     def pair(self, address):
         try:

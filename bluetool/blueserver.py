@@ -119,16 +119,23 @@ class BluetoothServer(dbus.service.Object):
 
     def run(self):
         if not self.spp.initialize():
+            return
+        self.mainloop.run()
+
+    def run_in_background(self):
+        if not self.spp.initialize():
             return False
         
-        self.server_process = multiprocessing.Process(target=self.mainloop.run)
-        self.server_process.start()
+        if self.server_process is None:
+            self.server_process = multiprocessing.Process(target=self.mainloop.run)
+            self.server_process.start()
         
         return True
 
     def quit(self):
+        self.mainloop.quit()
+
         if self.server_process is not None:
-            self.mainloop.quit()
             self.server_process.terminate()
             self.server_process.join()
             self.server_process = None
