@@ -102,8 +102,8 @@ class Bluetooth(object):
                             dev["Name"] = "<unknown>"
                     
                         device = {
-                            "mac_address": str(dev["Address"]),
-                            "name": str(dev["Name"])
+                            "mac_address": dev["Address"].encode("utf-8"),
+                            "name": dev["Name"].encode("utf-8")
                         }
 
                         devices.append(device)
@@ -119,8 +119,8 @@ class Bluetooth(object):
                                 dev["Name"] = "<unknown>"
 
                             device = {
-                                "mac_address": str(dev["Address"]),
-                                "name": str(dev["Name"])
+                                "mac_address": dev["Address"].encode("utf-8"),
+                                "name": dev["Name"].encode("utf-8")
                             }
 
                             devices.append(device)
