@@ -83,8 +83,10 @@ class Bluetooth(object):
             return devices
 
         try:
-            man = dbus.Interface(self.__bus.get_object("org.bluez", "/"),
-                    "org.freedesktop.DBus.ObjectManager")
+            man = dbus.Interface(
+                self.__bus.get_object("org.bluez", "/"),
+                "org.freedesktop.DBus.ObjectManager"
+            )
             objects = man.GetManagedObjects()
 
             for path, interfaces in objects.iteritems():
@@ -104,9 +106,10 @@ class Bluetooth(object):
 
                         devices.append(device)
                     else:
-                        props = dbus.Interface(self.__bus.get_object("org.bluez",
-                                path),
-                            "org.freedesktop.DBus.Properties")
+                        props = dbus.Interface(
+                            self.__bus.get_object("org.bluez", path),
+                            "org.freedesktop.DBus.Properties"
+                        )
 
                         if props.Get("org.bluez.Device1", condition):
                             if "Address" not in dev:
@@ -134,9 +137,10 @@ class Bluetooth(object):
             return False
         else:
             try:
-                props = dbus.Interface(self.__bus.get_object("org.bluez",
-                            adapter.object_path),
-                        "org.freedesktop.DBus.Properties")
+                props = dbus.Interface(
+                    self.__bus.get_object("org.bluez", adapter.object_path),
+                    "org.freedesktop.DBus.Properties"
+                )
 
                 if not props.Get("org.bluez.Adapter1", "Discoverable"):
                     props.Set("org.bluez.Adapter1", "Discoverable", dbus.Boolean(1))
@@ -147,8 +151,10 @@ class Bluetooth(object):
         return True
 
     def start_pairing(self, address, callback=None, args=None):
-        pair_thread = threading.Thread(target=self.send_report,
-                args=(address, callback, args))
+        pair_thread = threading.Thread(
+            target=self.send_report,
+            args=(address, callback, args)
+        )
         pair_thread.start()
 
     def send_report(self, address, callback=None, args=None):
@@ -168,9 +174,10 @@ class Bluetooth(object):
             return False
         else:
             try:
-                props = dbus.Interface(self.__bus.get_object("org.bluez",
-                            device.object_path),
-                        "org.freedesktop.DBus.Properties")
+                props = dbus.Interface(
+                    self.__bus.get_object("org.bluez", device.object_path),
+                    "org.freedesktop.DBus.Properties"
+                )
 
                 if not props.Get("org.bluez.Device1", "Paired"):
                     device.Pair()
@@ -188,9 +195,10 @@ class Bluetooth(object):
             return False
         else:
             try:
-                props = dbus.Interface(self.__bus.get_object("org.bluez",
-                            device.object_path),
-                        "org.freedesktop.DBus.Properties")
+                props = dbus.Interface(
+                    self.__bus.get_object("org.bluez", device.object_path),
+                    "org.freedesktop.DBus.Properties"
+                )
 
                 if not props.Get("org.bluez.Device1", "Connected"):
                     device.Connect()
@@ -208,9 +216,10 @@ class Bluetooth(object):
             return False
         else:
             try:
-                props = dbus.Interface(self.__bus.get_object("org.bluez",
-                            device.object_path),
-                        "org.freedesktop.DBus.Properties")
+                props = dbus.Interface(
+                    self.__bus.get_object("org.bluez", device.object_path),
+                    "org.freedesktop.DBus.Properties"
+                )
 
                 if props.Get("org.bluez.Device1", "Connected"):
                     device.Disconnect()
@@ -228,9 +237,10 @@ class Bluetooth(object):
             return False
         else:
             try:
-                props = dbus.Interface(self.__bus.get_object("org.bluez",
-                            device.object_path),
-                        "org.freedesktop.DBus.Properties")
+                props = dbus.Interface(
+                    self.__bus.get_object("org.bluez", device.object_path),
+                    "org.freedesktop.DBus.Properties"
+                )
 
                 if not props.Get("org.bluez.Device1", "Trusted"):
                     props.Set("org.bluez.Device1", "Trusted", dbus.Boolean(1))
