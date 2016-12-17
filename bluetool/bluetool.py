@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 # Bluetool code is placed under the GPL license.
 # Written by Aleksandr Aleksandrov (aleksandr.aleksandrov@emlid.com)
 # Copyright (c) 2016, Emlid Limited
@@ -21,10 +23,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Bluetool.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import object
 import dbus
 import dbus.mainloop.glib
 import threading
-import bluezutils
+from . import bluezutils
 
 
 class Bluetooth(object):
@@ -43,7 +46,7 @@ class Bluetooth(object):
         try:
             adapter = bluezutils.find_adapter()
         except bluezutils.BluezUtilError as error:
-            print error
+            print(error)
         else:
             try:
                 adapter.StartDiscovery()
@@ -53,7 +56,7 @@ class Bluetooth(object):
 
                 adapter.StopDiscovery()
             except dbus.exceptions.DBusException as error:
-                print error
+                print(error)
 
         self.scan_thread = None
 
@@ -80,7 +83,7 @@ class Bluetooth(object):
         conditions = ["Available", "Paired", "Connected"]
 
         if condition not in conditions:
-            print "__get_devices: unknown condition - {}".format(condition)
+            print("__get_devices: unknown condition - {}".format(condition))
             return devices
 
         try:
@@ -90,7 +93,7 @@ class Bluetooth(object):
             )
             objects = man.GetManagedObjects()
 
-            for path, interfaces in objects.iteritems():
+            for path, interfaces in objects.items():
                 if "org.bluez.Device1" in interfaces:
                     dev = interfaces["org.bluez.Device1"]
 
@@ -126,7 +129,7 @@ class Bluetooth(object):
                             devices.append(device)
 
         except dbus.exceptions.DBusException as error:
-            print error
+            print(error)
 
         return devices
 
@@ -134,7 +137,7 @@ class Bluetooth(object):
         try:
             adapter = bluezutils.find_adapter()
         except bluezutils.BluezUtilError as error:
-            print error
+            print(error)
             return False
         else:
             try:
@@ -146,7 +149,7 @@ class Bluetooth(object):
                 if not props.Get("org.bluez.Adapter1", "Discoverable"):
                     props.Set("org.bluez.Adapter1", "Discoverable", dbus.Boolean(1))
             except dbus.exceptions.DBusException as error:
-                print error
+                print(error)
                 return False
 
         return True
@@ -171,7 +174,7 @@ class Bluetooth(object):
         try:
             device = bluezutils.find_device(address)
         except bluezutils.BluezUtilError as error:
-            print error
+            print(error)
             return False
         else:
             try:
@@ -183,7 +186,7 @@ class Bluetooth(object):
                 if not props.Get("org.bluez.Device1", "Paired"):
                     device.Pair()
             except dbus.exceptions.DBusException as error:
-                print error
+                print(error)
                 return False
 
         return True
@@ -192,7 +195,7 @@ class Bluetooth(object):
         try:
             device = bluezutils.find_device(address)
         except bluezutils.BluezUtilError as error:
-            print error
+            print(error)
             return False
         else:
             try:
@@ -204,7 +207,7 @@ class Bluetooth(object):
                 if not props.Get("org.bluez.Device1", "Connected"):
                     device.Connect()
             except dbus.exceptions.DBusException as error:
-                print error
+                print(error)
                 return False
 
         return True
@@ -213,7 +216,7 @@ class Bluetooth(object):
         try:
             device = bluezutils.find_device(address)
         except bluezutils.BluezUtilError as error:
-            print error
+            print(error)
             return False
         else:
             try:
@@ -225,7 +228,7 @@ class Bluetooth(object):
                 if props.Get("org.bluez.Device1", "Connected"):
                     device.Disconnect()
             except dbus.exceptions.DBusException as error:
-                print error
+                print(error)
                 return False
 
         return True
@@ -234,7 +237,7 @@ class Bluetooth(object):
         try:
             device = bluezutils.find_device(address)
         except bluezutils.BluezUtilError as error:
-            print error
+            print(error)
             return False
         else:
             try:
@@ -246,7 +249,7 @@ class Bluetooth(object):
                 if not props.Get("org.bluez.Device1", "Trusted"):
                     props.Set("org.bluez.Device1", "Trusted", dbus.Boolean(1))
             except dbus.exceptions.DBusException as error:
-                print error
+                print(error)
                 return False
 
         return True
@@ -256,13 +259,13 @@ class Bluetooth(object):
             adapter = bluezutils.find_adapter()
             dev = bluezutils.find_device(address)
         except bluezutils.BluezUtilError as error:
-            print error
+            print(error)
             return False
         else:
             try:
                 adapter.RemoveDevice(dev.object_path)
             except dbus.exceptions.DBusException as error:
-                print error
+                print(error)
                 return False
 
         return True

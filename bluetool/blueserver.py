@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 # Bluetool code is placed under the GPL license.
 # Written by Aleksandr Aleksandrov (aleksandr.aleksandrov@emlid.com)
 # Copyright (c) 2016, Emlid Limited
@@ -21,6 +23,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Bluetool.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import str
+from builtins import object
 import socket
 import select
 import multiprocessing
@@ -31,7 +35,7 @@ try:
     from gi.repository import GObject
 except ImportError:
     import gobject as GObject
-from bluetool import Bluetooth
+from .bluetool import Bluetooth
 
 
 class SerialPort(object):
@@ -56,7 +60,7 @@ class SerialPort(object):
         try:
             self.manager.RegisterProfile(self.profile_path, self.uuid, self.opts)
         except dbus.exceptions.DBusException as error:
-            print error
+            print(error)
             return False
 
         return True
@@ -91,7 +95,7 @@ class TCPServer(object):
             self.server_socket.bind(self.address)
             self.server_socket.listen(5)
         except socket.error as error:
-            print error
+            print(error)
             return False
 
         return True
@@ -154,15 +158,15 @@ class BluetoothServer(dbus.service.Object):
         address = address[len(address)-17:len(address)]
         address = address.replace("_", ":")
 
-        print "Connected:", address
+        print("Connected:", address)
 
         try:
             tcp_server = TCPServer(self.tcp_port, self.tcp_buffer_size)
             if not tcp_server.initialize():
                 raise TCPServerError("TCP server did not start")
 
-            print "Waiting for TCPClient..."
-            print "Connected:", tcp_server.accept_connection()
+            print("Waiting for TCPClient...")
+            print("Connected:", tcp_server.accept_connection())
 
             blue_socket = socket.fromfd(fd.take(), socket.AF_UNIX, socket.SOCK_STREAM)
             blue_socket.setblocking(1)
@@ -183,14 +187,14 @@ class BluetoothServer(dbus.service.Object):
                             if data:
                                 tcp_server.write(data)
             except IOError as error:
-                print error
+                print(error)
             except TCPConnectionError as error:
-                print error
+                print(error)
 
             blue_socket.close()
             tcp_server.kill_connection()
         except TCPServerError as error:
-            print error
+            print(error)
 
         bluetooth = Bluetooth()
         bluetooth.disconnect(address)
