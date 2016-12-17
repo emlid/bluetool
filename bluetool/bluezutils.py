@@ -4,8 +4,10 @@ SERVICE_NAME = "org.bluez"
 ADAPTER_INTERFACE = SERVICE_NAME + ".Adapter1"
 DEVICE_INTERFACE = SERVICE_NAME + ".Device1"
 
+
 class BluezUtilError(Exception):
     pass
+
 
 def get_managed_objects():
     bus = dbus.SystemBus()
@@ -15,8 +17,10 @@ def get_managed_objects():
     )
     return manager.GetManagedObjects()
 
+
 def find_adapter(pattern=None):
     return find_adapter_in_objects(get_managed_objects(), pattern)
+
 
 def find_adapter_in_objects(objects, pattern=None):
     bus = dbus.SystemBus()
@@ -29,8 +33,10 @@ def find_adapter_in_objects(objects, pattern=None):
             return dbus.Interface(obj, ADAPTER_INTERFACE)
     raise BluezUtilError("Bluetooth adapter not found")
 
+
 def find_device(device_address, adapter_pattern=None):
     return find_device_in_objects(get_managed_objects(), device_address, adapter_pattern)
+
 
 def find_device_in_objects(objects, device_address, adapter_pattern=None):
     bus = dbus.SystemBus()

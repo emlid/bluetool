@@ -26,6 +26,7 @@ import dbus.mainloop.glib
 import threading
 import bluezutils
 
+
 class Bluetooth(object):
 
     def __init__(self):

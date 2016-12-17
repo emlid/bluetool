@@ -33,6 +33,7 @@ except ImportError:
     import gobject as GObject
 from bluetool import Bluetooth
 
+
 class SerialPort(object):
 
     profile_path = "/org/bluez/myprofile"
@@ -66,11 +67,14 @@ class SerialPort(object):
         except dbus.exceptions.DBusException:
             pass
 
+
 class TCPConnectionError(Exception):
     pass
 
+
 class TCPServerError(Exception):
     pass
+
 
 class TCPServer(object):
 
@@ -105,6 +109,7 @@ class TCPServer(object):
 
     def write(self, data):
         return self.client_socket.send(data)
+
 
 class BluetoothServer(dbus.service.Object):
 
