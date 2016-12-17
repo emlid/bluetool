@@ -27,7 +27,7 @@ import threading
 import bluezutils
 
 class Bluetooth(object):
-    
+
     def __init__(self):
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         self.__bus = dbus.SystemBus()
@@ -61,7 +61,7 @@ class Bluetooth(object):
 
         for key in self.get_paired_devices():
             devices.remove(key)
- 
+
         return devices
 
     def get_available_devices(self):
@@ -86,7 +86,7 @@ class Bluetooth(object):
             man = dbus.Interface(self.__bus.get_object("org.bluez", "/"),
                     "org.freedesktop.DBus.ObjectManager")
             objects = man.GetManagedObjects()
-            
+
             for path, interfaces in objects.iteritems():
                 if "org.bluez.Device1" in interfaces:
                     dev = interfaces["org.bluez.Device1"]
@@ -96,7 +96,7 @@ class Bluetooth(object):
                             continue
                         if "Name" not in dev:
                             dev["Name"] = "<unknown>"
-                    
+
                         device = {
                             "mac_address": dev["Address"].encode("utf-8"),
                             "name": dev["Name"].encode("utf-8")
@@ -123,7 +123,7 @@ class Bluetooth(object):
 
         except dbus.exceptions.DBusException as error:
             print error
-      
+
         return devices
 
     def make_discoverable(self):
@@ -177,7 +177,7 @@ class Bluetooth(object):
             except dbus.exceptions.DBusException as error:
                 print error
                 return False
-        
+
         return True
 
     def connect(self, address):
@@ -197,7 +197,7 @@ class Bluetooth(object):
             except dbus.exceptions.DBusException as error:
                 print error
                 return False
-        
+
         return True
 
     def disconnect(self, address):
@@ -217,7 +217,7 @@ class Bluetooth(object):
             except dbus.exceptions.DBusException as error:
                 print error
                 return False
-        
+
         return True
 
     def trust(self, address):
@@ -237,7 +237,7 @@ class Bluetooth(object):
             except dbus.exceptions.DBusException as error:
                 print error
                 return False
-        
+
         return True
 
     def remove(self, address):
@@ -255,4 +255,3 @@ class Bluetooth(object):
                 return False
 
         return True
-
