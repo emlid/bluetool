@@ -55,7 +55,7 @@ bluetooth.scan()
 
 devices = bluetooth.get_available_devices()
 
-print devices
+print(devices)
 ```
 
 #### Using the RFCOMM-TCP Bridge
