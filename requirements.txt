@@ -1,1 +1,2 @@
 dbus-python
+pgi
