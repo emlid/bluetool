@@ -6,6 +6,6 @@ setup(
     license='GPL',
     author='Aleksandr Aleksandrov',
     author_email='aleksandr.aleksandrov@emlid.com',
-    url='https://github.com/emlid/bluetooth-dbus',
+    url='https://github.com/emlid/bluetool',
     packages=['bluetool']
 )
