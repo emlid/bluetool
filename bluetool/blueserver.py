@@ -34,7 +34,8 @@ import dbus.mainloop.glib
 try:
     from gi.repository import GObject
 except ImportError:
-    import gobject as GObject
+    # use the pure-Python bindings
+    from pgi.repository import GObject
 from .bluetool import Bluetooth
 
 
