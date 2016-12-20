@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 # Bluetool code is placed under the GPL license.
 # Written by Aleksandr Aleksandrov (aleksandr.aleksandrov@emlid.com)
 # Copyright (c) 2016, Emlid Limited
@@ -21,17 +23,15 @@
 # You should have received a copy of the GNU General Public License
 # along with Bluetool.  If not, see <http://www.gnu.org/licenses/>.
 
+from builtins import object
 import dbus
 import dbus.mainloop.glib
-try:
-    from gi.repository import GObject
-except ImportError:
-    import gobject as GObject
 import threading
-import bluezutils
+from . import bluezutils
+
 
 class Bluetooth(object):
-    
+
     def __init__(self):
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         self.__bus = dbus.SystemBus()
@@ -46,7 +46,7 @@ class Bluetooth(object):
         try:
             adapter = bluezutils.find_adapter()
         except bluezutils.BluezUtilError as error:
-            print error
+            print(error)
         else:
             try:
                 adapter.StartDiscovery()
@@ -56,7 +56,7 @@ class Bluetooth(object):
 
                 adapter.StopDiscovery()
             except dbus.exceptions.DBusException as error:
-                print error
+                print(error)
 
         self.scan_thread = None
 
@@ -65,7 +65,7 @@ class Bluetooth(object):
 
         for key in self.get_paired_devices():
             devices.remove(key)
- 
+
         return devices
 
     def get_available_devices(self):
@@ -83,15 +83,17 @@ class Bluetooth(object):
         conditions = ["Available", "Paired", "Connected"]
 
         if condition not in conditions:
-            print "__get_devices: unknown condition - {}".format(condition)
+            print("__get_devices: unknown condition - {}".format(condition))
             return devices
 
         try:
-            man = dbus.Interface(self.__bus.get_object("org.bluez", "/"),
-                    "org.freedesktop.DBus.ObjectManager")
+            man = dbus.Interface(
+                self.__bus.get_object("org.bluez", "/"),
+                "org.freedesktop.DBus.ObjectManager"
+            )
             objects = man.GetManagedObjects()
-            
-            for path, interfaces in objects.iteritems():
+
+            for path, interfaces in objects.items():
                 if "org.bluez.Device1" in interfaces:
                     dev = interfaces["org.bluez.Device1"]
 
@@ -100,7 +102,7 @@ class Bluetooth(object):
                             continue
                         if "Name" not in dev:
                             dev["Name"] = "<unknown>"
-                    
+
                         device = {
                             "mac_address": dev["Address"].encode("utf-8"),
                             "name": dev["Name"].encode("utf-8")
@@ -108,9 +110,10 @@ class Bluetooth(object):
 
                         devices.append(device)
                     else:
-                        props = dbus.Interface(self.__bus.get_object("org.bluez",
-                                path),
-                            "org.freedesktop.DBus.Properties")
+                        props = dbus.Interface(
+                            self.__bus.get_object("org.bluez", path),
+                            "org.freedesktop.DBus.Properties"
+                        )
 
                         if props.Get("org.bluez.Device1", condition):
                             if "Address" not in dev:
@@ -126,33 +129,36 @@ class Bluetooth(object):
                             devices.append(device)
 
         except dbus.exceptions.DBusException as error:
-            print error
-      
+            print(error)
+
         return devices
 
     def make_discoverable(self):
         try:
             adapter = bluezutils.find_adapter()
         except bluezutils.BluezUtilError as error:
-            print error
+            print(error)
             return False
         else:
             try:
-                props = dbus.Interface(self.__bus.get_object("org.bluez",
-                            adapter.object_path),
-                        "org.freedesktop.DBus.Properties")
+                props = dbus.Interface(
+                    self.__bus.get_object("org.bluez", adapter.object_path),
+                    "org.freedesktop.DBus.Properties"
+                )
 
                 if not props.Get("org.bluez.Adapter1", "Discoverable"):
                     props.Set("org.bluez.Adapter1", "Discoverable", dbus.Boolean(1))
             except dbus.exceptions.DBusException as error:
-                print error
+                print(error)
                 return False
 
         return True
 
     def start_pairing(self, address, callback=None, args=None):
-        pair_thread = threading.Thread(target=self.send_report,
-                args=(address, callback, args))
+        pair_thread = threading.Thread(
+            target=self.send_report,
+            args=(address, callback, args)
+        )
         pair_thread.start()
 
     def send_report(self, address, callback=None, args=None):
@@ -168,80 +174,84 @@ class Bluetooth(object):
         try:
             device = bluezutils.find_device(address)
         except bluezutils.BluezUtilError as error:
-            print error
+            print(error)
             return False
         else:
             try:
-                props = dbus.Interface(self.__bus.get_object("org.bluez",
-                            device.object_path),
-                        "org.freedesktop.DBus.Properties")
+                props = dbus.Interface(
+                    self.__bus.get_object("org.bluez", device.object_path),
+                    "org.freedesktop.DBus.Properties"
+                )
 
                 if not props.Get("org.bluez.Device1", "Paired"):
                     device.Pair()
             except dbus.exceptions.DBusException as error:
-                print error
+                print(error)
                 return False
-        
+
         return True
 
     def connect(self, address):
         try:
             device = bluezutils.find_device(address)
         except bluezutils.BluezUtilError as error:
-            print error
+            print(error)
             return False
         else:
             try:
-                props = dbus.Interface(self.__bus.get_object("org.bluez",
-                            device.object_path),
-                        "org.freedesktop.DBus.Properties")
+                props = dbus.Interface(
+                    self.__bus.get_object("org.bluez", device.object_path),
+                    "org.freedesktop.DBus.Properties"
+                )
 
                 if not props.Get("org.bluez.Device1", "Connected"):
                     device.Connect()
             except dbus.exceptions.DBusException as error:
-                print error
+                print(error)
                 return False
-        
+
         return True
 
     def disconnect(self, address):
         try:
             device = bluezutils.find_device(address)
         except bluezutils.BluezUtilError as error:
-            print error
+            print(error)
             return False
         else:
             try:
-                props = dbus.Interface(self.__bus.get_object("org.bluez",
-                            device.object_path),
-                        "org.freedesktop.DBus.Properties")
+                props = dbus.Interface(
+                    self.__bus.get_object("org.bluez", device.object_path),
+                    "org.freedesktop.DBus.Properties"
+                )
 
                 if props.Get("org.bluez.Device1", "Connected"):
                     device.Disconnect()
             except dbus.exceptions.DBusException as error:
-                print error
+                print(error)
                 return False
-        
+
         return True
 
     def trust(self, address):
         try:
             device = bluezutils.find_device(address)
         except bluezutils.BluezUtilError as error:
-            print error
+            print(error)
             return False
         else:
             try:
-                props = dbus.Interface(self.__bus.get_object("org.bluez",
-                            device.object_path),
-                        "org.freedesktop.DBus.Properties")
+                props = dbus.Interface(
+                    self.__bus.get_object("org.bluez", device.object_path),
+                    "org.freedesktop.DBus.Properties"
+                )
 
                 if not props.Get("org.bluez.Device1", "Trusted"):
                     props.Set("org.bluez.Device1", "Trusted", dbus.Boolean(1))
             except dbus.exceptions.DBusException as error:
-                print error
+                print(error)
                 return False
-        
+
         return True
 
     def remove(self, address):
@@ -249,14 +259,13 @@ class Bluetooth(object):
             adapter = bluezutils.find_adapter()
             dev = bluezutils.find_device(address)
         except bluezutils.BluezUtilError as error:
-            print error
+            print(error)
             return False
         else:
             try:
                 adapter.RemoveDevice(dev.object_path)
             except dbus.exceptions.DBusException as error:
-                print error
+                print(error)
                 return False
 
         return True
-
