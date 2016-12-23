@@ -28,10 +28,11 @@ import dbus
 import dbus.service
 import dbus.mainloop.glib
 try:
-  from gi.repository import GObject
+    from gi.repository import GObject
 except ImportError:
-  import gobject as GObject
+    import gobject as GObject
 from bluetool import Bluetooth
+
 
 class SerialPort(object):
 
@@ -46,8 +47,10 @@ class SerialPort(object):
             "Channel": dbus.UInt16(channel),
             "AutoConnect": False
         }
-        self.manager = dbus.Interface(self.bus.get_object("org.bluez",
-                "/org/bluez"), "org.bluez.ProfileManager1")
+        self.manager = dbus.Interface(
+            self.bus.get_object("org.bluez", "/org/bluez"),
+            "org.bluez.ProfileManager1"
+        )
 
     def initialize(self):
         try:
@@ -57,20 +60,23 @@ class SerialPort(object):
             return False
 
         return True
-    
+
     def deinitialize(self):
-        try:    
+        try:
             self.manager.UnregisterProfile(self.profile_path)
         except dbus.exceptions.DBusException:
             pass
 
+
 class TCPConnectionError(Exception):
     pass
+
 
 class TCPServerError(Exception):
     pass
 
-class TCPServer(object):  
+
+class TCPServer(object):
 
     def __init__(self, tcp_port, buffer_size=1024):
         self.server_socket = None
@@ -91,7 +97,7 @@ class TCPServer(object):
         return True
 
     def accept_connection(self):
-        self.client_socket, client_info = self.server_socket.accept() 
+        self.client_socket, client_info = self.server_socket.accept()
         return client_info
 
     def kill_connection(self):
@@ -104,10 +110,10 @@ class TCPServer(object):
     def write(self, data):
         return self.client_socket.send(data)
 
+
 class BluetoothServer(dbus.service.Object):
 
-    def __init__(self, tcp_port=8043, channel=1,
-            tcp_buffer_size=1024, blue_buffer_size=1024):
+    def __init__(self, tcp_port=8043, channel=1, tcp_buffer_size=1024, blue_buffer_size=1024):
         self.spp = SerialPort(channel)
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         dbus.service.Object.__init__(self, dbus.SystemBus(), self.spp.profile_path)
@@ -125,11 +131,11 @@ class BluetoothServer(dbus.service.Object):
     def run_in_background(self):
         if not self.spp.initialize():
             return False
-        
+
         if self.server_process is None:
             self.server_process = multiprocessing.Process(target=self.mainloop.run)
             self.server_process.start()
-        
+
         return True
 
     def quit(self):
@@ -139,11 +145,10 @@ class BluetoothServer(dbus.service.Object):
             self.server_process.terminate()
             self.server_process.join()
             self.server_process = None
-        
+
         self.spp.deinitialize()
 
-    @dbus.service.method("org.bluez.Profile1",
-                in_signature="oha{sv}", out_signature="")
+    @dbus.service.method("org.bluez.Profile1", in_signature="oha{sv}", out_signature="")
     def NewConnection(self, path, fd, properties):
         address = str(path)
         address = address[len(address)-17:len(address)]
@@ -155,17 +160,16 @@ class BluetoothServer(dbus.service.Object):
             tcp_server = TCPServer(self.tcp_port, self.tcp_buffer_size)
             if not tcp_server.initialize():
                 raise TCPServerError("TCP server did not start")
-            
+
             print "Waiting for TCPClient..."
             print "Connected:", tcp_server.accept_connection()
 
             blue_socket = socket.fromfd(fd.take(), socket.AF_UNIX, socket.SOCK_STREAM)
             blue_socket.setblocking(1)
-            
+
             try:
                 while True:
-                    read, write, error = select.select([tcp_server.client_socket,
-                            blue_socket], [], [])
+                    read, write, error = select.select([tcp_server.client_socket, blue_socket], [], [])
 
                     for sock in read:
                         if sock == tcp_server.client_socket:
