@@ -42,7 +42,7 @@ class Bluetooth(object):
     def scan(self, timeout=10):
         try:
             adapter = bluezutils.find_adapter()
-        except bluezutils.BluezUtilError as error:
+        except (bluezutils.BluezUtilError, dbus.exceptions.DBusException) as error:
             print error
         else:
             try:
@@ -133,7 +133,7 @@ class Bluetooth(object):
     def make_discoverable(self):
         try:
             adapter = bluezutils.find_adapter()
-        except bluezutils.BluezUtilError as error:
+        except (bluezutils.BluezUtilError, dbus.exceptions.DBusException) as error:
             print error
             return False
         else:
@@ -159,18 +159,17 @@ class Bluetooth(object):
         pair_thread.start()
 
     def send_report(self, address, callback=None, args=None):
-        result = False
-
-        if self.pair(address) and self.trust(address):
-            result = True
+        result = self.pair(address)
 
         if callback is not None:
+            if result:
+                result = self.trust(address)
             callback(result, *args)
 
     def pair(self, address):
         try:
             device = bluezutils.find_device(address)
-        except bluezutils.BluezUtilError as error:
+        except (bluezutils.BluezUtilError, dbus.exceptions.DBusException) as error:
             print error
             return False
         else:
@@ -191,7 +190,7 @@ class Bluetooth(object):
     def connect(self, address):
         try:
             device = bluezutils.find_device(address)
-        except bluezutils.BluezUtilError as error:
+        except (bluezutils.BluezUtilError, dbus.exceptions.DBusException) as error:
             print error
             return False
         else:
@@ -212,7 +211,7 @@ class Bluetooth(object):
     def disconnect(self, address):
         try:
             device = bluezutils.find_device(address)
-        except bluezutils.BluezUtilError as error:
+        except (bluezutils.BluezUtilError, dbus.exceptions.DBusException) as error:
             print error
             return False
         else:
@@ -233,7 +232,7 @@ class Bluetooth(object):
     def trust(self, address):
         try:
             device = bluezutils.find_device(address)
-        except bluezutils.BluezUtilError as error:
+        except (bluezutils.BluezUtilError, dbus.exceptions.DBusException) as error:
             print error
             return False
         else:
@@ -255,7 +254,7 @@ class Bluetooth(object):
         try:
             adapter = bluezutils.find_adapter()
             dev = bluezutils.find_device(address)
-        except bluezutils.BluezUtilError as error:
+        except (bluezutils.BluezUtilError, dbus.exceptions.DBusException) as error:
             print error
             return False
         else:
