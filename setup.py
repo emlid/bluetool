@@ -7,5 +7,6 @@ setup(
     author='Aleksandr Aleksandrov',
     author_email='aleksandr.aleksandrov@emlid.com',
     url='https://github.com/emlid/bluetool',
-    packages=['bluetool']
+    packages=['bluetool'],
+    install_requires=['tcpbridge']
 )

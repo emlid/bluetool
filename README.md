@@ -6,6 +6,8 @@ A simple Python API for Bluetooth D-Bus calls. Allows easy pairing, connecting a
 
 `python-dbus`
 
+`tcpbridge`
+
 The package was tested with **Python 2.7**
 
 #### Installation
@@ -41,7 +43,7 @@ or clone and run `make install`
 	- Step2: Connect the bluetooth device
 	- Step3: TCPServer is available for connection
 	
-	BluetoothServer will disconnect your device if you lose TCPconnection. Use `quit()` to stop server, `run` is blocking.
+	Use `quit()` to stop server, `run` is blocking.
 
 ##### Examples
 
