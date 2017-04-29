@@ -87,6 +87,11 @@ class BluetoothServer(dbus.service.Object):
         self._mainloop.run()
 
     def shutdown(self):
+        try:
+            self.bridge.stop()
+        except AttributeError:
+            pass
+
         self._mainloop.quit()
         self._spp.unregister()
 
@@ -102,17 +107,17 @@ class BluetoothServer(dbus.service.Object):
             fd.take(), socket.AF_UNIX, socket.SOCK_STREAM)
 
         socket_sink = SocketSink(sock=blue_socket)
-        bridge = TCPBridge(
+        self.bridge = TCPBridge(
             sink=socket_sink,
             port_in=self.tcp_port_in,
             port_out=self.tcp_port_out)
 
         try:
-            bridge.start(in_background=False)
+            self.bridge.start(in_background=False)
         except TCPBridgeError as error:
             print_error(str(error) + "\n")
 
-        bridge.stop()
+        self.bridge.stop()
         blue_socket.close()
 
         print_info("Disconnected: {}\n".format(address))
