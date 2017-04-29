@@ -1,6 +1,7 @@
 ### Bluetool
 
-A simple Python API for Bluetooth D-Bus calls. Allows easy pairing, connecting and scanning. Also provides a TCP-to-RFCOMM socket bridge for data transfer.
+A simple Python API for Bluetooth D-Bus calls. Allows easy pairing, connecting and scanning.
+Also provides a TCP-to-RFCOMM socket bridge for data transfer.
 
 #### Dependencies
 
@@ -38,11 +39,11 @@ or clone and run `make install`
 
 - BluetoothServer:
  	
-	- Step1: Use `run_in_background()` to create SPP
+	- Step1: Use `run()` to create SPP
 	- Step2: Connect the bluetooth device
 	- Step3: TCPServer is available for connection
 	
-	Use `quit()` to stop server, `run()` is blocking.
+	Use `shutdown()` to shutdown server.
 
 ##### Examples
 
@@ -58,14 +59,21 @@ print(devices)
 ```
 - Using the RFCOMM-TCP Bridge
 ```python
+import signal
 from bluetool import BluetoothServer
 
 
-port = 8100
-server = BluetoothServer(port)
-server.run_in_background()
-...
-server.quit()
+def handler(signum, frame):
+    server.shutdown()
+
+
+tcp_port = 8100
+server = BluetoothServer(tcp_port)
+
+signal.signal(signal.SIGINT, handler)
+signal.signal(signal.SIGTERM, handler)
+
+server.run()
 ```
 
 ### About the project
