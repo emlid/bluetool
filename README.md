@@ -4,9 +4,8 @@ A simple Python API for Bluetooth D-Bus calls. Allows easy pairing, connecting a
 
 #### Dependencies
 
-`python-dbus`
-
-`tcpbridge`
+- `python-dbus`
+- `tcpbridge`
 
 The package was tested with **Python 2.7**
 
@@ -43,25 +42,24 @@ or clone and run `make install`
 	- Step2: Connect the bluetooth device
 	- Step3: TCPServer is available for connection
 	
-	Use `quit()` to stop server, `run` is blocking.
+	Use `quit()` to stop server, `run()` is blocking.
 
 ##### Examples
 
 - Scanning
-```
+```python
 from bluetool import Bluetooth
 
+
 bluetooth = Bluetooth()
-
 bluetooth.scan()
-
 devices = bluetooth.get_available_devices()
-
-print devices
+print(devices)
 ```
 - Using the RFCOMM-TCP Bridge
-```
+```python
 from bluetool import BluetoothServer
+
 
 port = 8100
 server = BluetoothServer(port)
@@ -75,8 +73,3 @@ server.quit()
 This package was written by [Aleksandr Aleksandrov](https://github.com/AD-Aleksandrov) working at [Emlid](https://emlid.com/).
 
 The bluetool was originally written for the [Emlid Reach RTK receiver](https://emlid.com/reach/), but we decided to open source it, as there is no easy Python API for BT pairing/connecting. Feel free to add issues and submit pull requests.
-
-
-
-
-
