@@ -131,7 +131,7 @@ class Bluetooth(object):
 
         return devices
 
-    def make_discoverable(self):
+    def make_discoverable(self, value=True, timeout=180):
         try:
             adapter = bluezutils.find_adapter()
         except (bluezutils.BluezUtilError,
@@ -144,9 +144,18 @@ class Bluetooth(object):
                 self._bus.get_object("org.bluez", adapter.object_path),
                 "org.freedesktop.DBus.Properties")
 
-            if not props.Get("org.bluez.Adapter1", "Discoverable"):
+            timeout = int(timeout)
+            value = int(value)
+
+            if int(props.Get(
+                    "org.bluez.Adapter1", "DiscoverableTimeout")) != timeout:
                 props.Set(
-                    "org.bluez.Adapter1", "Discoverable", dbus.Boolean(1))
+                    "org.bluez.Adapter1", "DiscoverableTimeout",
+                    dbus.UInt32(timeout))
+
+            if int(props.Get("org.bluez.Adapter1", "Discoverable")) != value:
+                props.Set(
+                    "org.bluez.Adapter1", "Discoverable", dbus.Boolean(value))
         except dbus.exceptions.DBusException as error:
             print_error(str(error) + "\n")
             return False
@@ -268,3 +277,42 @@ class Bluetooth(object):
             return False
 
         return True
+
+    def set_adapter_property(self, _property, value):
+        try:
+            adapter = bluezutils.find_adapter()
+        except (bluezutils.BluezUtilError,
+                dbus.exceptions.DBusException) as error:
+            print_error(str(error) + "\n")
+            return False
+
+        try:
+            props = dbus.Interface(
+                self._bus.get_object("org.bluez", adapter.object_path),
+                "org.freedesktop.DBus.Properties")
+
+            if props.Get("org.bluez.Adapter1", _property) != value:
+                props.Set("org.bluez.Adapter1", _property, value)
+        except dbus.exceptions.DBusException as error:
+            print_error(str(error) + "\n")
+            return False
+
+        return True
+
+    def get_adapter_property(self, _property):
+        try:
+            adapter = bluezutils.find_adapter()
+        except (bluezutils.BluezUtilError,
+                dbus.exceptions.DBusException) as error:
+            print_error(str(error) + "\n")
+            return None
+
+        try:
+            props = dbus.Interface(
+                self._bus.get_object("org.bluez", adapter.object_path),
+                "org.freedesktop.DBus.Properties")
+
+            return props.Get("org.bluez.Adapter1", _property)
+        except dbus.exceptions.DBusException as error:
+            print_error(str(error) + "\n")
+            return None
