@@ -1,3 +1,26 @@
+# Bluetool code is placed under the GPL license.
+# Written by Aleksandr Aleksandrov (aleksandr.aleksandrov@emlid.com)
+# Copyright (c) 2017, Emlid Limited
+# All rights reserved.
+
+# If you are interested in using Bluetool code as a part of a
+# closed source project, please contact Emlid Limited (info@emlid.com).
+
+# This file is part of Bluetool.
+
+# Bluetool is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Bluetool is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with Bluetool.  If not, see <http://www.gnu.org/licenses/>.
+
 import dbus
 import dbus.service
 import dbus.mainloop.glib
@@ -55,7 +78,11 @@ class Agent(dbus.service.Object):
             self, client_class=None, timeout=180,
             path="/org/bluez/my_bluetooth_agent"):
         dbus.service.Object.__init__(self, dbus.SystemBus(), path)
-        self._client = client_class() or Client()
+
+        if client_class is not None:
+            self._client = client_class()
+        else:
+            self._client = Client()
 
     def _trust(self, dbus_device):
         addr = self._dbus_device2addr(dbus_device)
