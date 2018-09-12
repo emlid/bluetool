@@ -21,6 +21,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Bluetool.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 import dbus
 import dbus.service
 import dbus.mainloop.glib
@@ -33,7 +35,9 @@ except ImportError:
 
 from tcpbridge import TCPBridge, SocketSink, TCPBridgeError
 from bluetool import Bluetooth
-from utils import print_error, print_info
+
+
+logger = logging.getLogger(__name__)
 
 
 class SerialPort(object):
@@ -58,7 +62,7 @@ class SerialPort(object):
             self.manager.RegisterProfile(
                 self.profile_path, self.uuid, self.opts)
         except dbus.exceptions.DBusException as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         return True
@@ -101,7 +105,7 @@ class BluetoothServer(dbus.service.Object):
         address = str(path)
         address = address[len(address) - 17:len(address)]
         address = address.replace("_", ":")
-        print_info("Connected: {}\n".format(address))
+        logger.info("Connected: {}\n".format(address))
 
         blue_socket = socket.fromfd(
             fd.take(), socket.AF_UNIX, socket.SOCK_STREAM)
@@ -115,10 +119,10 @@ class BluetoothServer(dbus.service.Object):
         try:
             self.bridge.start(in_background=False)
         except TCPBridgeError as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
 
         self.bridge.stop()
         blue_socket.close()
 
-        print_info("Disconnected: {}\n".format(address))
+        logger.info("Disconnected: {}\n".format(address))
         Bluetooth().disconnect(address)
