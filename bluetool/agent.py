@@ -21,6 +21,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Bluetool.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 import dbus
 import dbus.service
 import dbus.mainloop.glib
@@ -31,7 +33,9 @@ except ImportError:
     import gobject as GObject
 
 from bluetool import Bluetooth
-from utils import print_info, print_error
+
+
+logger = logging.getLogger(__name__)
 
 
 class _Rejected(dbus.DBusException):
@@ -103,17 +107,17 @@ class Agent(dbus.service.Object):
     @dbus.service.method(
         "org.bluez.Agent1", in_signature="os", out_signature="")
     def AuthorizeService(self, device, uuid):
-        print_info("AuthorizeService: {}, {}\n".format(device, uuid))
+        logger.info("AuthorizeService: {}, {}\n".format(device, uuid))
         dev_info = self._get_device_info(device)
         self._client.authorize_service(dev_info, str(uuid))
 
     @dbus.service.method(
         "org.bluez.Agent1", in_signature="o", out_signature="s")
     def RequestPinCode(self, device):
-        print_info("RequestPinCode: {}\n".format(device))
+        logger.info("RequestPinCode: {}\n".format(device))
 
         if not self._trust(device):
-            print_error("RequestPinCode: failed to trust\n")
+            logger.error("RequestPinCode: failed to trust\n")
             raise _Rejected
 
         dev_info = self._get_device_info(device)
@@ -123,16 +127,16 @@ class Agent(dbus.service.Object):
             assert isinstance(pin_code, (str, int))
             return str(pin_code)
         except BaseException as error:
-            print_error("RequestPinCode: {}\n".format(error))
+            logger.error("RequestPinCode: {}\n".format(error))
             raise _Rejected
 
     @dbus.service.method(
         "org.bluez.Agent1", in_signature="o", out_signature="u")
     def RequestPasskey(self, device):
-        print_info("RequestPasskey: {}\n".format(device))
+        logger.info("RequestPasskey: {}\n".format(device))
 
         if not self._trust(device):
-            print_error("RequestPasskey: failed to trust\n")
+            logger.error("RequestPasskey: failed to trust\n")
             raise _Rejected
 
         dev_info = self._get_device_info(device)
@@ -140,7 +144,7 @@ class Agent(dbus.service.Object):
         try:
             passkey = int(self._client.request_passkey(dev_info))
         except BaseException as error:
-            print_error("RequestPasskey: {}\n".format(error))
+            logger.error("RequestPasskey: {}\n".format(error))
             raise _Rejected
 
         return dbus.UInt32(passkey)
@@ -148,14 +152,14 @@ class Agent(dbus.service.Object):
     @dbus.service.method(
         "org.bluez.Agent1", in_signature="os", out_signature="")
     def DisplayPinCode(self, device, pincode):
-        print_info("DisplayPinCode: {}: {}\n".format(device, pincode))
+        logger.info("DisplayPinCode: {}: {}\n".format(device, pincode))
         dev_info = self._get_device_info(device)
         self._client.display_pin_code(dev_info, str(pincode))
 
     @dbus.service.method(
         "org.bluez.Agent1", in_signature="ouq", out_signature="")
     def DisplayPasskey(self, device, passkey, entered):
-        print_info("DisplayPasskey: {}: {} entered {}\n".format(
+        logger.info("DisplayPasskey: {}: {} entered {}\n".format(
             device, passkey, entered))
         dev_info = self._get_device_info(device)
         self._client.display_passkey(dev_info, str(passkey), str(entered))
@@ -163,10 +167,10 @@ class Agent(dbus.service.Object):
     @dbus.service.method(
         "org.bluez.Agent1", in_signature="ou", out_signature="")
     def RequestConfirmation(self, device, passkey):
-        print_info("RequestConfirmation: {}, {}\n".format(device, passkey))
+        logger.info("RequestConfirmation: {}, {}\n".format(device, passkey))
 
         if not self._trust(device):
-            print_error("RequestConfirmation: failed to trust\n")
+            logger.error("RequestConfirmation: failed to trust\n")
             raise _Rejected
 
         dev_info = self._get_device_info(device)
@@ -174,10 +178,10 @@ class Agent(dbus.service.Object):
         try:
             result = self._client.request_confirmation(dev_info, str(passkey))
         except BaseException as error:
-            print_error("RequestConfirmation: {}\n".format(error))
+            logger.error("RequestConfirmation: {}\n".format(error))
             raise _Rejected
 
-        print_info("RequestConfirmation: {}: {}\n".format(device, result))
+        logger.info("RequestConfirmation: {}: {}\n".format(device, result))
 
         try:
             assert result == True
@@ -187,10 +191,10 @@ class Agent(dbus.service.Object):
     @dbus.service.method(
         "org.bluez.Agent1", in_signature="o", out_signature="")
     def RequestAuthorization(self, device):
-        print_info("RequestAuthorization: {}\n".format(device))
+        logger.info("RequestAuthorization: {}\n".format(device))
 
         if not self._trust(device):
-            print_error("RequestAuthorization: failed to trust\n")
+            logger.error("RequestAuthorization: failed to trust\n")
             raise _Rejected
 
         dev_info = self._get_device_info(device)
@@ -198,10 +202,10 @@ class Agent(dbus.service.Object):
         try:
             result = self._client.request_authorization(dev_info)
         except BaseException as error:
-            print_error("RequestAuthorization: {}\n".format(error))
+            logger.error("RequestAuthorization: {}\n".format(error))
             raise _Rejected
 
-        print_info("RequestAuthorization: {}: {}\n".format(device, result))
+        logger.info("RequestAuthorization: {}: {}\n".format(device, result))
 
         try:
             assert result == True
@@ -243,7 +247,7 @@ class AgentSvr(object):
             manager.RegisterAgent(self.path, self.capability)
             manager.RequestDefaultAgent(self.path)
         except dbus.exceptions.DBusException as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         return True
