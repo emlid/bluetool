@@ -21,12 +21,16 @@
 # You should have received a copy of the GNU General Public License
 # along with Bluetool.  If not, see <http://www.gnu.org/licenses/>.
 
+import time
+import logging
+import threading
+
 import dbus
 import dbus.mainloop.glib
-import threading
-import time
 import bluezutils
-from utils import print_error
+
+
+logger = logging.getLogger(__name__)
 
 
 class Bluetooth(object):
@@ -48,14 +52,14 @@ class Bluetooth(object):
             adapter = bluezutils.find_adapter()
         except (bluezutils.BluezUtilError,
                 dbus.exceptions.DBusException) as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
         else:
             try:
                 adapter.StartDiscovery()
                 time.sleep(timeout)
                 adapter.StopDiscovery()
             except dbus.exceptions.DBusException as error:
-                print_error(str(error) + "\n")
+                logger.error(str(error) + "\n")
 
         self._scan_thread = None
 
@@ -81,7 +85,7 @@ class Bluetooth(object):
         conditions = ("Available", "Paired", "Connected")
 
         if condition not in conditions:
-            print_error("_get_devices: unknown condition - {}\n".format(
+            logger.error("_get_devices: unknown condition - {}\n".format(
                 condition))
             return devices
 
@@ -127,7 +131,7 @@ class Bluetooth(object):
 
                             devices.append(device)
         except dbus.exceptions.DBusException as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
 
         return devices
 
@@ -136,7 +140,7 @@ class Bluetooth(object):
             adapter = bluezutils.find_adapter()
         except (bluezutils.BluezUtilError,
                 dbus.exceptions.DBusException) as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         try:
@@ -157,7 +161,7 @@ class Bluetooth(object):
                 props.Set(
                     "org.bluez.Adapter1", "Discoverable", dbus.Boolean(value))
         except dbus.exceptions.DBusException as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         return True
@@ -182,7 +186,7 @@ class Bluetooth(object):
             device = bluezutils.find_device(address)
         except (bluezutils.BluezUtilError,
                 dbus.exceptions.DBusException) as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         try:
@@ -193,7 +197,7 @@ class Bluetooth(object):
             if not props.Get("org.bluez.Device1", "Paired"):
                 device.Pair()
         except dbus.exceptions.DBusException as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         return True
@@ -203,7 +207,7 @@ class Bluetooth(object):
             device = bluezutils.find_device(address)
         except (bluezutils.BluezUtilError,
                 dbus.exceptions.DBusException) as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         try:
@@ -214,7 +218,7 @@ class Bluetooth(object):
             if not props.Get("org.bluez.Device1", "Connected"):
                 device.Connect()
         except dbus.exceptions.DBusException as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         return True
@@ -224,7 +228,7 @@ class Bluetooth(object):
             device = bluezutils.find_device(address)
         except (bluezutils.BluezUtilError,
                 dbus.exceptions.DBusException) as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         try:
@@ -235,7 +239,7 @@ class Bluetooth(object):
             if props.Get("org.bluez.Device1", "Connected"):
                 device.Disconnect()
         except dbus.exceptions.DBusException as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         return True
@@ -245,7 +249,7 @@ class Bluetooth(object):
             device = bluezutils.find_device(address)
         except (bluezutils.BluezUtilError,
                 dbus.exceptions.DBusException) as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         try:
@@ -256,7 +260,7 @@ class Bluetooth(object):
             if not props.Get("org.bluez.Device1", "Trusted"):
                 props.Set("org.bluez.Device1", "Trusted", dbus.Boolean(1))
         except dbus.exceptions.DBusException as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         return True
@@ -267,13 +271,13 @@ class Bluetooth(object):
             dev = bluezutils.find_device(address)
         except (bluezutils.BluezUtilError,
                 dbus.exceptions.DBusException) as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         try:
             adapter.RemoveDevice(dev.object_path)
         except dbus.exceptions.DBusException as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         return True
@@ -283,7 +287,7 @@ class Bluetooth(object):
             adapter = bluezutils.find_adapter()
         except (bluezutils.BluezUtilError,
                 dbus.exceptions.DBusException) as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         try:
@@ -294,7 +298,7 @@ class Bluetooth(object):
             if props.Get("org.bluez.Adapter1", prop) != value:
                 props.Set("org.bluez.Adapter1", prop, value)
         except dbus.exceptions.DBusException as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         return True
@@ -304,7 +308,7 @@ class Bluetooth(object):
             adapter = bluezutils.find_adapter()
         except (bluezutils.BluezUtilError,
                 dbus.exceptions.DBusException) as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return None
 
         try:
@@ -314,7 +318,7 @@ class Bluetooth(object):
 
             return props.Get("org.bluez.Adapter1", prop)
         except dbus.exceptions.DBusException as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return None
 
     def set_device_property(self, address, prop, value):
@@ -322,7 +326,7 @@ class Bluetooth(object):
             device = bluezutils.find_device(address)
         except (bluezutils.BluezUtilError,
                 dbus.exceptions.DBusException) as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         try:
@@ -333,7 +337,7 @@ class Bluetooth(object):
             if props.Get("org.bluez.Device1", prop) != value:
                 props.Set("org.bluez.Device1", prop, value)
         except dbus.exceptions.DBusException as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return False
 
         return True
@@ -343,7 +347,7 @@ class Bluetooth(object):
             device = bluezutils.find_device(address)
         except (bluezutils.BluezUtilError,
                 dbus.exceptions.DBusException) as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return None
 
         try:
@@ -353,5 +357,5 @@ class Bluetooth(object):
 
             return props.Get("org.bluez.Device1", prop)
         except dbus.exceptions.DBusException as error:
-            print_error(str(error) + "\n")
+            logger.error(str(error) + "\n")
             return None
