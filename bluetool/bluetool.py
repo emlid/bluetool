@@ -72,13 +72,19 @@ class Bluetooth(object):
         return devices
 
     def get_available_devices(self):
-        return self._get_devices("Available")
+        available_devices = self._get_devices("Available")
+        logger.debug("Available devices: {}".format(available_devices))
+        return available_devices
 
     def get_paired_devices(self):
-        return self._get_devices("Paired")
+        paired_devices = self._get_devices("Paired")
+        logger.debug("Paired devices: {}".format(paired_devices))
+        return paired_devices
 
     def get_connected_devices(self):
-        return self._get_devices("Connected")
+        connected_devices = self._get_devices("Connected")
+        logger.debug("Connected devices: {}".format(connected_devices))
+        return connected_devices
 
     def _get_devices(self, condition):
         devices = []
@@ -164,6 +170,7 @@ class Bluetooth(object):
             logger.error(str(error) + "\n")
             return False
 
+        logger.info("Discoverable: {}".format(value))
         return True
 
     def start_pairing(self, address, callback=None, args=()):
@@ -200,6 +207,7 @@ class Bluetooth(object):
             logger.error(str(error) + "\n")
             return False
 
+        logger.info("Successfully paired with {}".format(address))
         return True
 
     def connect(self, address):
@@ -221,6 +229,7 @@ class Bluetooth(object):
             logger.error(str(error) + "\n")
             return False
 
+        logger.info("Successfully connected to {}".format(address))
         return True
 
     def disconnect(self, address):
@@ -280,6 +289,7 @@ class Bluetooth(object):
             logger.error(str(error) + "\n")
             return False
 
+        logger.info("Successfully removed: {}".format(address))
         return True
 
     def set_adapter_property(self, prop, value):
