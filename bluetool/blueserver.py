@@ -22,11 +22,11 @@
 # along with Bluetool.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import socket
 
 import dbus
-import dbus.service
 import dbus.mainloop.glib
-import socket
+import dbus.service
 
 try:
     from gi.repository import GObject

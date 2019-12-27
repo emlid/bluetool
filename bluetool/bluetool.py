@@ -21,14 +21,14 @@
 # You should have received a copy of the GNU General Public License
 # along with Bluetool.  If not, see <http://www.gnu.org/licenses/>.
 
-import time
 import logging
 import threading
+import time
 
 import dbus
 import dbus.mainloop.glib
-import bluezutils
 
+import bluezutils
 
 logger = logging.getLogger(__name__)
 

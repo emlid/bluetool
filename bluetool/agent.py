@@ -24,8 +24,8 @@
 import logging
 
 import dbus
-import dbus.service
 import dbus.mainloop.glib
+import dbus.service
 
 try:
     from gi.repository import GObject

@@ -1,4 +1,5 @@
 import signal
+
 from bluetool.agent import Client, AgentSvr
 
 
