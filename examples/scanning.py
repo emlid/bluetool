@@ -1,4 +1,4 @@
-from bluetool import Bluetooth
+from reach.bluetool.bluetool import Bluetooth
 
 
 bluetooth = Bluetooth()

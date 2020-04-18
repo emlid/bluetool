@@ -1,6 +1,6 @@
 import signal
 
-from bluetool import BluetoothServer
+from reach.bluetool.bluetool import BluetoothServer
 
 
 def handler(signum, frame):

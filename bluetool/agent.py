@@ -32,7 +32,7 @@ try:
 except ImportError:
     import gobject as GObject
 
-from bluetool import Bluetooth
+from reach.bluetool.bluetool import Bluetooth
 
 
 logger = logging.getLogger(__name__)

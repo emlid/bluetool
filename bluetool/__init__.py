@@ -1,4 +1,4 @@
 from blueserver import BluetoothServer
-from bluetool import Bluetooth
+from reach.bluetool.bluetool import Bluetooth
 
 __all__ = ['Bluetooth', 'BluetoothServer']

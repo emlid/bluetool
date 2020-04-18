@@ -1,6 +1,6 @@
 import signal
 
-from bluetool.agent import Client, AgentSvr
+from reach.bluetool.bluetool.agent import Client, AgentSvr
 
 
 class MyClient(Client):

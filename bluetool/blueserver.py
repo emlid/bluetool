@@ -33,8 +33,8 @@ try:
 except ImportError:
     import gobject as GObject
 
-from tcpbridge import TCPBridge, SocketSink, TCPBridgeError
-from bluetool import Bluetooth
+from reach.tcpbridge.tcpbridge import TCPBridge, SocketSink, TCPBridgeError
+from reach.bluetool.bluetool import Bluetooth
 
 
 logger = logging.getLogger(__name__)
