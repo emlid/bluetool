@@ -34,7 +34,7 @@ except ImportError:
     import gobject as GObject
 
 from tcpbridge import TCPBridge, SocketSink, TCPBridgeError
-from bluetool import Bluetooth
+from .bluetool import Bluetooth
 
 
 logger = logging.getLogger(__name__)
