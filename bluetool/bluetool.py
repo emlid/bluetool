@@ -27,7 +27,7 @@ import threading
 
 import dbus
 import dbus.mainloop.glib
-import bluezutils
+from . import bluezutils
 
 
 logger = logging.getLogger(__name__)
