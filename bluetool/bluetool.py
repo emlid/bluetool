@@ -27,7 +27,7 @@ import threading
 
 import dbus
 import dbus.mainloop.glib
-import bluezutils
+from . import bluezutils
 
 
 logger = logging.getLogger(__name__)
@@ -101,7 +101,7 @@ class Bluetooth(object):
                 "org.freedesktop.DBus.ObjectManager")
             objects = man.GetManagedObjects()
 
-            for path, interfaces in objects.items():
+            for path, interfaces in list(objects.items()):
                 if "org.bluez.Device1" in interfaces:
                     dev = interfaces["org.bluez.Device1"]
 
