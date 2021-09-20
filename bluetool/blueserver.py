@@ -75,14 +75,41 @@ class SerialPort(object):
 
 
 class BluetoothServer(dbus.service.Object):
+    hostname_bus_name = "org.freedesktop.hostname1"
+    hostname_path = "/org/freedesktop/hostname1"
     def __init__(self, tcp_port_in=8043, tcp_port_out=None, channel=1):
         self._spp = SerialPort(channel)
+        self._bus = dbus.SystemBus()
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         dbus.service.Object.__init__(
             self, dbus.SystemBus(), self._spp.profile_path)
         self.tcp_port_in = tcp_port_in
         self.tcp_port_out = tcp_port_out
         self._mainloop = GObject.MainLoop()
+        self.set_current_hostname_as_alias()
+
+    def set_current_hostname_as_alias(self):
+        obj = self._bus.get_object(self.hostname_bus_name, self.hostname_path)
+        interface = dbus.Interface(obj, "org.freedesktop.DBus.Properties")
+        hostname = interface.Get(self.hostname_bus_name, "PrettyHostname").encode("utf-8")
+
+        Bluetooth().set_adapter_property("Alias", hostname)
+
+
+    def callback(self, *args, **kwargs):
+        hostname_dict = args[1]
+        if "PrettyHostname" in hostname_dict.keys():
+
+            hostname = str(hostname_dict["PrettyHostname"])
+            Bluetooth().set_adapter_property("Alias", hostname)
+
+    def register_callback(self):
+        self._bus.add_signal_receiver(self.callback,
+                                      bus_name=self.hostname_bus_name,
+                                      path_keyword=self.hostname_path,
+                                      interface_keyword='interface',
+                                      member_keyword='member',
+                                      message_keyword='msg')
 
     def run(self):
         if not self._spp.register():
