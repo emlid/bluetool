@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='bluetool',
-    version='0.4.0',
+    version='0.4.1',
     license='GPL',
     author='Aleksandr Aleksandrov',
     author_email='aleksandr.aleksandrov@emlid.com',
